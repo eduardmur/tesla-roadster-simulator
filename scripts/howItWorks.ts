@@ -11,11 +11,11 @@ function jsonLd(siteUrl: string): string {
   const doc = {
     '@context': 'https://schema.org',
     '@type': 'TechArticle',
-    headline: 'How the Tesla Roadster flies',
+    headline: 'How it works',
     description:
-      'A plain-language explanation of the 2026 Tesla Roadster’s underbody suction fans and compressed-air thrusters, and how it drives up a curled ramp, hangs upside down, flips and lands.',
+      'How the 2026 Tesla Roadster’s suction fans and compressed-air thrusters let it hang upside down on a curled ramp, roll over and land.',
     datePublished: '2026-10-16',
-    dateModified: '2026-10-16',
+    dateModified: '2026-10-17',
     inLanguage: 'en',
     author: {
       '@type': 'Organization',

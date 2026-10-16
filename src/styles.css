@@ -63,16 +63,47 @@ button {
   gap: 16px;
 }
 
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .brand-name {
   font-size: 15px;
   font-weight: 500;
   letter-spacing: 0.01em;
+  white-space: nowrap;
 }
 
-.brand-note {
-  font-size: 12px;
-  color: var(--faint);
-  margin-top: 2px;
+.about {
+  position: relative;
+}
+
+.about-btn {
+  color: var(--muted);
+}
+
+.about-panel {
+  position: absolute;
+  top: 40px;
+  left: 0;
+  width: min(300px, calc(100vw - 48px));
+  padding: 14px 16px;
+  border-radius: 6px;
+  background: rgba(23, 26, 32, 0.94);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  pointer-events: auto;
+}
+
+.about-panel p {
+  margin: 0 0 8px;
+}
+
+.about-panel a {
+  color: var(--text);
 }
 
 .top-actions {
@@ -114,11 +145,13 @@ button {
 .ui-bottom {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
+  grid-template-areas: 'readout center .';
   align-items: end;
   gap: 16px;
 }
 
 .readout {
+  grid-area: readout;
   display: flex;
   align-items: flex-end;
   gap: 28px;
@@ -160,6 +193,7 @@ button {
 }
 
 .center {
+  grid-area: center;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -286,26 +320,124 @@ button {
   color: var(--muted);
 }
 
+/* Touch pedals and steering (phones and tablets only). */
+.touch-steer,
+.touch-pedals {
+  display: none;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.touch-steer {
+  grid-area: steer;
+}
+
+.touch-pedals {
+  grid-area: pedals;
+  justify-content: flex-end;
+}
+
+.touch-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-btn:active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.touch-btn.steer {
+  width: 64px;
+  height: 64px;
+}
+
+.touch-btn.brake {
+  width: 64px;
+  height: 56px;
+}
+
+.touch-btn.throttle {
+  width: 64px;
+  height: 96px;
+}
+
+.for-touch {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .ui-top {
+    gap: 8px;
+  }
+  .brand-name {
+    font-size: 14px;
+    white-space: normal;
+    max-width: 120px;
+    line-height: 1.25;
+  }
+  .link-btn {
+    padding: 8px 6px;
+  }
+}
+
 @media (max-width: 720px) {
   .ui-bottom {
     grid-template-columns: 1fr;
+    grid-template-areas: 'center' 'readout';
     justify-items: center;
   }
   .readout {
-    order: 2;
     gap: 18px;
   }
   .speed-value {
     font-size: 44px;
   }
-  .center {
-    order: 1;
-  }
 }
 
 @media (pointer: coarse) {
-  .hint {
+  .for-keys {
     display: none;
+  }
+  .for-touch {
+    display: inline;
+  }
+  .touch-steer,
+  .touch-pedals {
+    display: flex;
+  }
+  .ui-bottom {
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: 'steer center pedals' 'steer readout pedals';
+    justify-items: center;
+  }
+  .readout {
+    gap: 18px;
+  }
+  .speed-value {
+    font-size: 40px;
+  }
+}
+
+@media (pointer: coarse) and (max-width: 720px) {
+  .ui-bottom {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: 'center center' 'readout readout' 'steer pedals';
+  }
+  .touch-steer {
+    justify-self: start;
+  }
+  .touch-pedals {
+    justify-self: end;
   }
 }
 

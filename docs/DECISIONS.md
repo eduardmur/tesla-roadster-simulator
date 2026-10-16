@@ -13,7 +13,7 @@ Choices made while building Tesla Roadster Simulator. Each entry says what we de
   (8.71) only supports TS < 6.1, so we pinned `~6.0`.
 - **Rapier used directly (`@dimforge/rapier3d-compat`), not `@react-three/rapier`.** The sim
   needs a fixed 120 Hz step, pause, deterministic stepping for captures, and a headless
-  autopilot test in Node. An imperative world in `src/sim/world.ts` makes all of this
+  jump test in Node. An imperative world in `src/sim/world.ts` makes all of this
   straightforward. The declarative wrapper would fight it.
 - **Custom raycast vehicle.** We use our own vehicle instead of Rapier's
   `DynamicRayCastVehicleController`. Its tires use the friction circle from
@@ -78,48 +78,74 @@ approved the following changes:
 In v2 the project owner asked for a much simpler product. v1 had a guided tour, lab panels,
 challenges, settings and "what if" sliders. The feedback was that it was overcomplicated, so v2:
 
-- **Does one thing.** The car starts parked in front of the reported 170° ramp. **Launch** hands
-  it to the autopilot; holding **W** lets you drive it yourself with the assists on. Everything
+- **Does one thing.** The car starts parked in front of the reported 170° ramp, and you drive it
+  up yourself (see v2.1 below; v2.0 also had a Launch button for an autopilot). Everything
   else (the tour, lab, X-ray, other challenges, the test pad, trims, slow motion and scrub-back,
   settings) was removed. The physics module keeps all of it, because its tests check it against
   every reported number.
-- **Has a Tesla-screen-like interface:** the name and the unofficial notice top left, "How it
-  works" and mute top right, speed and three quiet readouts (suction, thrust, air) bottom left,
-  and one button. White on black, system font, no accent colours. It borrows the mood, not any
+- **Has a Tesla-screen-like interface:** the name top left, "How it works" and mute top right,
+  speed and three quiet readouts (suction, thrust, air) bottom left, and at most one button. White on black, system font, no accent colours. It borrows the mood, not any
   Tesla marks, fonts or logos.
 - **Takes its look from the reveal's night setting** (described in coverage and in stills the
   owner shared): a dark sky, a lit concrete curl with red light strips and a truss, red runway
   lamps and blue searchlights. Everything is still procedural.
 - **Has quieter sound.** v1 used oscillators for the fan and motor, which read as a constant
-  whine. v2 has no tones at all: filtered noise for the gas hiss and a low rumble, both driven
-  only by the air flow, so it is silent when parked.
+  whine. v2 has no synthesised tones at all (v2.1 adds recorded clips, below).
 - **Has a plain-language article** ("How it works") instead of the tour. It is one narrow column
   of text with an animated demonstration of the jump, five simple diagrams, and numbered sources
   at the end. The same HTML is shown in the app and generated as the static `/how-it-works`
   page at build time, so the two cannot drift apart.
 
+## v2.1: drive it yourself
+
+More feedback from the project owner after v2.0:
+
+- **Manual only.** The Launch button and the autopilot are gone; you hold W (or the touch pedal)
+  and the assists do the rest. Phones and tablets get on-screen steering buttons and pedals, since
+  there is no button to press any more.
+- **The car stops after the landing and waits.** In v2.0 it held "brake", which the car model
+  reads as "reverse" once stopped, so it backed away. Now the brakes are held without reverse
+  until you press a drive key again (a fresh press, so holding W through the landing does not skip
+  the result). Then you drive on from where it landed.
+- **The unofficial notice sits behind a "?" next to the name.** It is not legally required to be
+  always visible, but with "Tesla" in the name it should stay easy to find. It is one tap away, at
+  the end of the article, in the README and in the page title.
+- **The car was redrawn from reference photos the owner shared:** a long, low bronze canopy with
+  seams, thin side windows, sharp shoulder creases, cut-out wheel arches, a black sill that rises
+  behind the rear wheels, a tall tail with a black light band, a diffuser with the four rear
+  thruster rings, and light wheel faces with dark star spokes. No logos, wordmarks or badges; the
+  plate is blank.
+- **Recorded sound.** The owner supplied three ElevenLabs clips: a motor loop (pitch follows speed,
+  loudness follows the accelerator, with a crossfade so the loop has no click), a burst of air for
+  the landing burn, and applause after a clean landing. A soft synthesised hiss remains for the
+  smaller nozzle bursts.
+- **Shorter article.** Headings are one or two words ("Suction", "Air tanks", "Nozzles"…), and the
+  text was edited to cut filler.
+
 ## 3D app
 
-- **No downloaded assets at all.** The sky, ground, ramp, reflections (in-scene light panels)
-  and sound are procedural. The car body is lofted from cross-sections, and its windows are
-  drawn per pixel in the shader. That removes any licensing questions and keeps the first load
-  small.
+- **No downloaded visual assets.** The sky, ground, ramp and reflections (in-scene light panels)
+  are procedural. The car body is lofted from faceted cross-sections; its glass, black trim,
+  seams and wheel-arch cut-outs are drawn per pixel in the shader from a `section` coordinate
+  stored on each vertex. That keeps the first load small.
 - **Rapier "compat" build.** It embeds its WASM, so the physics chunk is about 1.7 MB gzipped. It
   is lazy-loaded after the first frame of the scene, so the page shows the car before physics
   is ready. The non-compat build would be smaller but needs WASM bundler plugins in both Vite
   and Vitest.
 - **Slow climb on the reported curl.** Entering a 10.6 m radius loop at 80+ km/h is a ~5 g
-  pull-up that bottoms out any suspension. The autopilot enters at ~40 km/h and climbs at
-  ~32 km/h, letting suction hold the car on. The peak load at touchdown in the sim is about 5 g,
+  pull-up that bottoms out any suspension. The speed assist enters at ~40 km/h and climbs at
+  ~32 km/h, letting suction hold the car on. The peak load at touchdown in the sim is about 7 g,
   including the suspension hitting its stops. The reported in-car readout was 3.3 g.
-- **Ramp speed assist (always on when you drive).** A naive "hold W" run reaches the curl far too
+- **Ramp speed assist (on whenever you head for the ramp).** A naive "hold W" run reaches the curl far too
   fast, where v²/R is many g. The suspension bottoms out and the car bounces off or lands very
   hard, which is what physics says. With the assist, W means "go at a safe speed" on the run-in
   and climb, and the flight assists handle the roll and landing, so a first-time visitor can
-  finish the trick. Tests cover both: the assisted naive run lands under 8 g, and the unassisted
-  one lands at least 1.5× harder (or fails).
-- **Film-style cameras.** The autopilot run cuts between fixed shots (behind the car, beside the
-  ramp, the landing from the runway, then a slow orbit). Driving yourself uses a chase camera.
+  finish the trick. Away from the ramp (for example after a landing) the throttle is yours. Tests
+  cover all three: holding W lands under 8 g, the same run without the assist lands at least
+  1.5× harder (or fails), and driving away is not capped.
+- **Film-style cameras.** A chase camera follows the car to the ramp. Once it is on the curl the
+  camera cuts between fixed shots (beside the ramp, the drop, the landing from the runway), then
+  a slow orbit while the car waits.
   Camera shake is off with reduced motion.
 - **The `/how-it-works` page is generated at build time** by `scripts/howItWorks.ts` from
   `src/article/article.ts`. Every number in it comes from `specs.ts` or from

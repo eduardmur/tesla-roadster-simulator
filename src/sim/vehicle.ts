@@ -118,7 +118,7 @@ export interface WheelStepContext {
   mass: number;
   /** Collider handle → surface label. */
   labels: Map<number, string>;
-  /** Launch control / autopilot can hold the brakes. */
+  /** Holds the brakes fully (the car waits after a run); no reverse. */
   holdBrake: boolean;
   /** Moving platforms (the tilt rig), keyed by surface label. */
   platforms: Map<string, RAPIER.RigidBody>;

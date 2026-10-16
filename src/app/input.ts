@@ -1,10 +1,13 @@
 /**
- * Keyboard and gamepad input. Space/Enter launches (or runs again), R resets,
- * W/A/S/D or arrows drive it yourself.
+ * Keyboard, touch and gamepad input. W/A/S/D or arrows drive; Space/Enter goes again after a
+ * run; R goes back to the start.
  */
 import { NO_INPUT, type DriveInput } from '../sim/types';
 
-export type Action = 'launch' | 'reset';
+export type Action = 'again' | 'reset';
+
+/** Held on-screen pedals and steering buttons (touch screens). */
+export const touch = { throttle: 0, brake: 0, left: 0, right: 0 };
 
 const DRIVE_CODES = new Set([
   'KeyW',
@@ -37,7 +40,7 @@ export function attachKeyboard(onAction: (a: Action) => void, enabled: () => boo
       e.preventDefault();
     } else if ((e.code === 'Space' || e.code === 'Enter') && !onButton && !e.repeat) {
       e.preventDefault();
-      onAction('launch');
+      onAction('again');
     } else if (e.code === 'KeyR' && !e.repeat) {
       onAction('reset');
     }
@@ -54,19 +57,16 @@ export function attachKeyboard(onAction: (a: Action) => void, enabled: () => boo
   };
 }
 
-/** True while the player is holding a drive key or stick. */
-export function wantsToDrive(): boolean {
-  return keys.size > 0;
-}
-
 /** Read the keyboard (and the first gamepad, standard mapping) into a DriveInput. */
 export function readDriveInput(onAction: (a: Action) => void): DriveInput {
   const has = (...codes: string[]) => codes.some((c) => keys.has(c));
   const input: DriveInput = {
     ...NO_INPUT,
-    throttle: has('KeyW', 'ArrowUp') ? 1 : 0,
-    brake: has('KeyS', 'ArrowDown') ? 1 : 0,
-    steer: (has('KeyA', 'ArrowLeft') ? 1 : 0) - (has('KeyD', 'ArrowRight') ? 1 : 0),
+    throttle: Math.max(has('KeyW', 'ArrowUp') ? 1 : 0, touch.throttle),
+    brake: Math.max(has('KeyS', 'ArrowDown') ? 1 : 0, touch.brake),
+    steer:
+      Math.max(has('KeyA', 'ArrowLeft') ? 1 : 0, touch.left) -
+      Math.max(has('KeyD', 'ArrowRight') ? 1 : 0, touch.right),
   };
   let pads: (Gamepad | null)[] = [];
   try {
@@ -77,7 +77,7 @@ export function readDriveInput(onAction: (a: Action) => void): DriveInput {
   const gp = pads.find((p): p is Gamepad => !!p && p.connected);
   if (gp) {
     const pressed = gp.buttons.map((b) => b.pressed);
-    if (pressed[0] && !lastButtons[0]) onAction('launch');
+    if (pressed[0] && !lastButtons[0]) onAction('again');
     if (pressed[3] && !lastButtons[3]) onAction('reset');
     lastButtons = pressed;
     const lx = gp.axes[0] ?? 0;

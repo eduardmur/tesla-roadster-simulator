@@ -3,7 +3,7 @@
  * No rendering, so it can be tested headless.
  */
 import { dot, toBody } from '../physics/math';
-import { curlSpeeds } from './autopilot';
+import { curlSpeeds } from './assist';
 import { RAMP, curlAngleAt } from './track';
 import type { Sim, StepInfo } from './world';
 
@@ -21,6 +21,8 @@ export interface JumpResult {
   airUsed: number;
   /** Highest point reached, m. */
   maxHeight: number;
+  /** False when the car never got onto the ramp (it was just driven around). */
+  reachedRamp: boolean;
 }
 
 const deg = (r: number) => (r * 180) / Math.PI;
@@ -65,6 +67,17 @@ export class JumpMonitor {
       this.maxAngle = Math.max(this.maxAngle, curlAngleAt(RAMP, p));
       if (this.stage === 'approach') this.stage = 'climb';
       if (this.maxAngle > (120 * Math.PI) / 180 && this.stage === 'climb') this.stage = 'inverted';
+    }
+
+    // Got some way up, then rolled back down onto the ground.
+    if (
+      this.stage === 'climb' &&
+      info.surface === 'ground' &&
+      !info.airborne &&
+      this.maxAngle > (20 * Math.PI) / 180
+    ) {
+      this.finish(sim);
+      return;
     }
 
     const onRamp = this.stage === 'climb' || this.stage === 'inverted';
@@ -132,6 +145,7 @@ export class JumpMonitor {
       airUsed:
         this.airStart - (this.touchdown !== null ? this.airAtLanding : (sim.tank?.mass ?? 0)),
       maxHeight: this.maxHeight,
+      reachedRamp: this.entrySpeed !== null,
     };
   }
 }

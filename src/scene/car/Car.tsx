@@ -13,27 +13,46 @@ import {
 } from '../../physics/layout';
 import { SPAWNS } from '../../sim/track';
 import { PlumeCones } from '../effects/Plumes';
-import { bodyGeometry, bodyMaterial } from './body';
-import { nozzleGeometry, rimGeometry, tireGeometry } from './geometry';
+import { ARCH_RADIUS, WHEEL_Y, bodyGeometry, bodyMaterial, station } from './body';
+import { nozzleGeometry, tireGeometry, wheelGeometry } from './geometry';
 import { nozzleVisualPosition } from './nozzles';
 
 const getSim = () => host.sim;
 const NOZZLES = [...REAR_NOZZLES, ...DOWN_NOZZLES, ...YAW_NOZZLES];
 const DOWN = new THREE.Vector3(0, -1, 0);
+const TAIL_Z = -2.17;
 
 function useMaterials() {
   return useMemo(
     () => ({
       body: bodyMaterial(),
       tire: new THREE.MeshStandardMaterial({ color: '#0d0d0e', roughness: 0.9 }),
-      rim: new THREE.MeshStandardMaterial({ color: '#2a2d32', roughness: 0.35, metalness: 0.9 }),
+      disc: new THREE.MeshPhysicalMaterial({
+        color: '#d9dcdf',
+        roughness: 0.3,
+        metalness: 0.2,
+        clearcoat: 0.6,
+      }),
+      gloss: new THREE.MeshPhysicalMaterial({
+        color: '#0a0b0c',
+        roughness: 0.2,
+        metalness: 0.3,
+        clearcoat: 1,
+      }),
       dark: new THREE.MeshStandardMaterial({ color: '#0b0c0e', roughness: 0.6, metalness: 0.4 }),
+      well: new THREE.MeshStandardMaterial({
+        color: '#050506',
+        roughness: 0.95,
+        side: THREE.DoubleSide,
+      }),
       nozzle: new THREE.MeshStandardMaterial({
         color: '#8a9099',
         roughness: 0.3,
         metalness: 1,
         side: THREE.DoubleSide,
       }),
+      ring: new THREE.MeshStandardMaterial({ color: '#c9ced4', roughness: 0.2, metalness: 1 }),
+      plate: new THREE.MeshStandardMaterial({ color: '#d7d9db', roughness: 0.5 }),
       front: new THREE.MeshStandardMaterial({
         color: '#fff',
         emissive: '#eaf2ff',
@@ -51,14 +70,36 @@ function useMaterials() {
   );
 }
 
+/** Dark wheelhouse behind each cut-out arch: an open half-drum and an inner wall. */
+function wheelhouseGeometry(): THREE.BufferGeometry[] {
+  const depth = 0.32;
+  // Around the top of the wheel, open at the bottom (theta is measured from the front).
+  const drum = new THREE.CylinderGeometry(
+    ARCH_RADIUS + 0.005,
+    ARCH_RADIUS + 0.005,
+    depth,
+    32,
+    1,
+    true,
+    Math.PI * (0.5 - 0.6),
+    Math.PI * 1.2,
+  );
+  drum.rotateZ(Math.PI / 2);
+  const wall = new THREE.CircleGeometry(ARCH_RADIUS + 0.005, 32);
+  wall.rotateY(Math.PI / 2);
+  wall.translate(-depth / 2, 0, 0);
+  return [drum, wall];
+}
+
 export function Car({ carRef }: { carRef: React.RefObject<THREE.Group | null> }) {
   const m = useMaterials();
   const geo = useMemo(
     () => ({
       body: bodyGeometry(),
       tire: tireGeometry(),
-      rim: rimGeometry(),
+      wheel: wheelGeometry(),
       nozzle: nozzleGeometry(0.03, 0.12),
+      well: wheelhouseGeometry(),
     }),
     [],
   );
@@ -68,6 +109,14 @@ export function Car({ carRef }: { carRef: React.RefObject<THREE.Group | null> })
     () => ({ warm: new THREE.Color('#8a9099'), cold: new THREE.Color('#f4f8ff') }),
     [],
   );
+  const details = useMemo(() => {
+    const a = station(1.0);
+    const r = station(-1.95);
+    return {
+      camera: { x: a.wbelt + 0.02, y: a.ybelt + 0.015 },
+      marker: { x: r.w + 0.003, y: r.ys - 0.035 },
+    };
+  }, []);
 
   useFrame(() => {
     const g = carRef.current;
@@ -103,20 +152,83 @@ export function Car({ carRef }: { carRef: React.RefObject<THREE.Group | null> })
   return (
     <group ref={carRef}>
       <mesh geometry={geo.body} material={m.body} castShadow receiveShadow />
-      {/* Light bars */}
-      <mesh position={[0, 0.0, 2.155]} material={m.front}>
-        <boxGeometry args={[1.25, 0.018, 0.02]} />
+
+      {/* Wheelhouses behind the arch cut-outs */}
+      {WHEELS.map((w) => (
+        <group
+          key={`well-${w.id}`}
+          position={[Math.sign(w.anchor[0]) * 0.8, WHEEL_Y, w.anchor[2]]}
+          scale={[Math.sign(w.anchor[0]), 1, 1]}
+        >
+          {geo.well.map((g, i) => (
+            <mesh key={i} geometry={g} material={m.well} />
+          ))}
+        </group>
+      ))}
+
+      {/* Front: light bar and a dark lower intake */}
+      <mesh position={[0, -0.02, 2.172]} material={m.front}>
+        <boxGeometry args={[1.1, 0.016, 0.01]} />
       </mesh>
-      <mesh position={[0, 0.1, -2.17]} material={m.rear}>
-        <boxGeometry args={[1.6, 0.022, 0.02]} />
+      <mesh position={[0, -0.17, 2.173]} material={m.gloss}>
+        <boxGeometry args={[1.0, 0.07, 0.01]} />
       </mesh>
-      {/* Floor and rear diffuser */}
-      <mesh position={[0, -0.335, 0]} material={m.dark}>
-        <boxGeometry args={[1.7, 0.01, 3.8]} />
+
+      {/* Rear: black light band with a full-width red bar (a small ducktail at the corners) */}
+      <mesh position={[0, 0.355, TAIL_Z + 0.01]} material={m.gloss}>
+        <boxGeometry args={[1.84, 0.1, 0.1]} />
       </mesh>
-      <mesh position={[0, -0.13, -2.15]} material={m.dark}>
-        <boxGeometry args={[1.5, 0.18, 0.05]} />
+      <mesh position={[0, 0.36, TAIL_Z - 0.045]} material={m.rear}>
+        <boxGeometry args={[1.66, 0.024, 0.012]} />
       </mesh>
+      {/* Blank plate */}
+      <mesh position={[0, 0.17, TAIL_Z - 0.004]} material={m.gloss}>
+        <boxGeometry args={[0.5, 0.13, 0.006]} />
+      </mesh>
+      <mesh position={[0, 0.17, TAIL_Z - 0.008]} material={m.plate}>
+        <boxGeometry args={[0.47, 0.105, 0.006]} />
+      </mesh>
+      {/* Diffuser: the four rear thrusters sit in its face, fins below */}
+      <mesh position={[0, -0.16, TAIL_Z + 0.02]} material={m.gloss}>
+        <boxGeometry args={[1.62, 0.42, 0.18]} />
+      </mesh>
+      {REAR_NOZZLES.map((n) => (
+        <mesh
+          key={`ring-${n.id}`}
+          position={[n.position[0], n.position[1], TAIL_Z - 0.072]}
+          material={m.ring}
+        >
+          <torusGeometry args={[0.058, 0.009, 10, 32]} />
+        </mesh>
+      ))}
+      {[-0.42, 0, 0.42].map((x) => (
+        <mesh
+          key={`sensor-${x}`}
+          position={[x, -0.12, TAIL_Z - 0.071]}
+          rotation-x={Math.PI / 2}
+          material={m.dark}
+        >
+          <cylinderGeometry args={[0.022, 0.022, 0.01, 20]} />
+        </mesh>
+      ))}
+      {[-0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6].map((x) => (
+        <mesh key={`fin-${x}`} position={[x, -0.29, TAIL_Z - 0.09]} material={m.gloss}>
+          <boxGeometry args={[0.012, 0.15, 0.22]} />
+        </mesh>
+      ))}
+
+      {/* Small side cameras ahead of the windows, red side markers at the rear */}
+      {[-1, 1].map((s) => (
+        <group key={`side-${s}`}>
+          <mesh position={[s * details.camera.x, details.camera.y, 1.0]} material={m.gloss}>
+            <boxGeometry args={[0.05, 0.03, 0.08]} />
+          </mesh>
+          <mesh position={[s * details.marker.x, details.marker.y, -1.95]} material={m.rear}>
+            <boxGeometry args={[0.004, 0.022, 0.08]} />
+          </mesh>
+        </group>
+      ))}
+
       {NOZZLES.map((n) => {
         const jet = new THREE.Vector3(...n.direction).multiplyScalar(-1).normalize();
         const q = new THREE.Quaternion().setFromUnitVectors(DOWN, jet);
@@ -143,7 +255,10 @@ export function Car({ carRef }: { carRef: React.RefObject<THREE.Group | null> })
             }}
           >
             <mesh geometry={geo.tire} material={m.tire} castShadow />
-            <mesh geometry={geo.rim} material={m.rim} scale={[w.anchor[0] > 0 ? 1 : -1, 1, 1]} />
+            <group scale={[w.anchor[0] > 0 ? 1 : -1, 1, 1]}>
+              <mesh geometry={geo.wheel.disc} material={m.disc} />
+              <mesh geometry={geo.wheel.dark} material={m.gloss} />
+            </group>
           </group>
         </group>
       ))}

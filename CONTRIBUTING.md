@@ -10,10 +10,11 @@ all welcome.
 - **No invented numbers.** Every number the article shows must come from
   [`src/data/specs.ts`](src/data/specs.ts), tagged `confirmed`, `reported` or `estimate`, with a
   source for anything reported. Values derived from those go through the physics module.
-- **No Tesla or SpaceX branding.** No logos, wordmarks, badges or copied design details. The car is
-  an original procedural model. Always keep the "Unofficial fan project. Not affiliated with
-  Tesla." line next to the name.
-- **Assets**: CC0 only, credited in [`CREDITS.md`](CREDITS.md).
+- **No Tesla or SpaceX branding.** No logos, wordmarks or badges. The car is our own procedural
+  model. Keep the unofficial notice one tap away from the name (the "?" button), in the article
+  and in the README.
+- **Assets**: new ones must be CC0, credited in [`CREDITS.md`](CREDITS.md). (The three existing
+  sound clips are the exception; see there.)
 - **No trackers or analytics.**
 - English for UI, copy, code comments and docs.
 
@@ -33,7 +34,7 @@ npm run build && npm run e2e   # Playwright smoke test against the build
 
 ```
 src/physics/   pure, deterministic physics (no rendering imports), fully unit-tested
-src/sim/       Rapier world, raycast vehicle, forces, the ramp, autopilot, jump monitor
+src/sim/       Rapier world, raycast vehicle, forces, the ramp, speed assist, jump monitor
 src/scene/     three.js / react-three-fiber: car, ramp, night scene, exhaust, cameras
 src/ui/        the overlay and the article reader
 src/article/   the "How it works" article and its diagrams

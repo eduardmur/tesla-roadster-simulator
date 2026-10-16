@@ -1,6 +1,6 @@
 /**
  * Renders README/OG media from the built site:
- *   docs/media/curl.gif   — the autopilot doing the upside-down ramp jump
+ *   docs/media/curl.gif   — the upside-down ramp jump (W held)
  *   public/og-image.png   — 1200×630 Open Graph image
  *
  * Usage: npm run build && npx vite preview --configLoader runner --port 4173 &
@@ -26,7 +26,7 @@ const browser = await chromium.launch({
   ],
 });
 
-/** Open the app, hide the interface and start the autopilot run with the sim held. */
+/** Open the app, hide the interface and hold W (the ramp assist does the rest), sim held. */
 async function open(width, height) {
   const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
   await page.goto(url);
@@ -39,12 +39,12 @@ async function open(width, height) {
     app.getState().set({ quality: 'high', muted: true });
     // Step the sim by hand for deterministic frames.
     host.hold = true;
-    host.launch();
   });
+  await page.keyboard.down('KeyW');
   return page;
 }
 
-/** Advance the sim by n fixed steps with the autopilot driving, then let the scene render. */
+/** Advance the sim by n fixed steps with W held, then let the scene render. */
 async function advance(page, steps, frames = 3) {
   await page.evaluate((n) => window.__trs.host.stepFor(n), steps);
   for (let i = 0; i < frames; i++)

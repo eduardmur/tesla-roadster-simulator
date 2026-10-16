@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import type { JumpResult, JumpStage } from '../sim/jump';
 
 export type Quality = 'low' | 'medium' | 'high';
-export type RunMode = 'idle' | 'auto' | 'manual' | 'done';
+export type RunMode = 'idle' | 'manual' | 'done';
 
 export interface LoadState {
   stage: 'idle' | 'scene' | 'physics' | 'ready' | 'error';

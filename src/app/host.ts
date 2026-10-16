@@ -1,21 +1,25 @@
 /**
- * The sim host: owns the Sim and runs the jump. "Launch" hands the car to the autopilot
- * (cinematic run); holding W drives it yourself, with the same safety assists on.
+ * The sim host: owns the Sim and runs the jump. You drive (W, or the pedal on touch screens);
+ * the ramp assist keeps the speed safe and the flight computer rolls and lands the car. After
+ * a run the car stops and waits; a fresh drive input takes over from wherever it is.
  */
-import { applyRampAssist, createCurlAutopilot, type CurlAutopilot } from '../sim/autopilot';
+import { applyRampAssist } from '../sim/assist';
 import { JumpMonitor } from '../sim/jump';
 import { RAMP } from '../sim/track';
-import { NO_INPUT } from '../sim/types';
+import { NO_INPUT, type DriveInput } from '../sim/types';
 import type { Sim } from '../sim/world';
 import { useApp } from '../state/store';
-import { readDriveInput, wantsToDrive, type Action } from './input';
+import { readDriveInput, type Action } from './input';
+
+const noAction = () => {};
 
 class Host {
   sim: Sim | null = null;
   private loading: Promise<Sim> | null = null;
-  autopilot: CurlAutopilot | null = null;
   readonly monitor = new JumpMonitor();
   private reported = false;
+  /** Drive input was released since the last run ended (so a held key doesn't skip the result). */
+  private released = true;
   /** Scripted captures freeze real-time stepping and advance with stepFor(). */
   hold = false;
 
@@ -37,31 +41,20 @@ class Host {
     return this.loading;
   }
 
-  /** Back to the start line, tanks full. */
+  /** Back to the start line in front of the ramp, tanks full. */
   reset(): void {
     const sim = this.sim;
     if (!sim) return;
     sim.reset('start');
-    this.autopilot = null;
     this.monitor.start(sim);
     this.reported = false;
     useApp.getState().set({ mode: 'idle', stage: 'ready', result: null });
   }
 
-  /** Hand the car to the autopilot for the jump (from the start line). */
-  launch(): void {
-    const sim = this.sim;
-    if (!sim) return;
-    if (useApp.getState().mode !== 'idle') this.reset();
-    this.autopilot = createCurlAutopilot(RAMP);
-    useApp.getState().set({ mode: 'auto' });
-  }
-
   onAction = (a: Action): void => {
     const app = useApp.getState();
     if (app.articleOpen || app.load.stage !== 'ready') return;
-    if (a === 'reset') this.reset();
-    else if (app.mode === 'idle' || app.mode === 'done') this.launch();
+    if (a === 'reset' || app.mode === 'done') this.reset();
   };
 
   /** Called by the scene every frame. */
@@ -70,44 +63,66 @@ class Host {
     if (!sim) return;
     const app = useApp.getState();
     sim.paused = app.articleOpen || this.hold;
-
-    if (app.mode === 'idle' && wantsToDrive()) app.set({ mode: 'manual' });
-    const mode = useApp.getState().mode;
-    if (mode === 'auto' && this.autopilot) {
-      sim.updateTelemetry();
-      sim.input = this.autopilot.input(sim.telemetry);
-    } else if (mode === 'manual') {
-      // Assists stay on: W means "go at a safe speed" on the ramp; the flight computer does the rest.
-      sim.input = applyRampAssist(readDriveInput(this.onAction), sim.telemetry, RAMP);
-    } else {
-      readDriveInput(this.onAction);
-      sim.input = { ...NO_INPUT, brake: mode === 'done' ? 1 : 0 };
-    }
+    sim.input = this.driverInput(readDriveInput(this.onAction));
     sim.advance(dt);
     this.syncStage();
   }
 
-  /** Advance n fixed steps with the current driver (used by scripted captures). */
+  /** Advance n fixed steps with the current controls (used by scripted captures and tests). */
   stepFor(n: number): void {
     const sim = this.sim;
     if (!sim) return;
+    const drive = readDriveInput(noAction);
     for (let i = 0; i < n; i++) {
-      sim.updateTelemetry();
-      if (this.autopilot) sim.input = this.autopilot.input(sim.telemetry);
+      sim.input = this.driverInput(drive);
       sim.step();
+      this.syncStage();
     }
     sim.updateTelemetry();
-    this.syncStage();
+  }
+
+  /** Turn the player's controls into the sim input for the current mode. */
+  private driverInput(drive: DriveInput): DriveInput {
+    const sim = this.sim!;
+    const app = useApp.getState();
+    const wants = drive.throttle > 0 || drive.brake > 0 || drive.steer !== 0;
+    if (!wants) this.released = true;
+    const canTakeOver = app.mode === 'idle' || (app.mode === 'done' && this.released);
+    if (wants && canTakeOver && !app.articleOpen) this.takeOver();
+    const mode = useApp.getState().mode;
+    // After a run the brakes hold the car still (brake input alone would mean reverse once stopped).
+    sim.holdBrake = mode === 'done';
+    if (mode !== 'manual') return NO_INPUT;
+    // W means "go at a safe speed" toward the ramp; the flight computer does the rest.
+    sim.updateTelemetry();
+    return applyRampAssist(drive, sim.telemetry, RAMP);
+  }
+
+  /** The player takes the wheel: from the start line, or from wherever the last run ended. */
+  private takeOver(): void {
+    const sim = this.sim;
+    if (!sim) return;
+    const app = useApp.getState();
+    if (app.mode === 'done') {
+      this.monitor.start(sim);
+      this.reported = false;
+    }
+    app.set({ mode: 'manual', result: null, stage: this.monitor.stage });
   }
 
   private syncStage(): void {
     const app = useApp.getState();
     const m = this.monitor;
-    if (m.stage !== app.stage) app.set({ stage: m.stage });
     if (m.result && !this.reported) {
-      this.reported = true;
-      app.set({ mode: 'done', result: m.result });
+      // Just driving around, nowhere near the ramp: nothing to judge, keep watching.
+      if (!m.result.reachedRamp && this.sim) m.start(this.sim);
+      else {
+        this.reported = true;
+        this.released = false;
+        app.set({ mode: 'done', result: m.result });
+      }
     }
+    if (m.stage !== app.stage) app.set({ stage: m.stage });
   }
 }
 

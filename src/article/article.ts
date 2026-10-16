@@ -6,7 +6,7 @@
  */
 import { derived } from '../data/derived';
 import { SPECS, type Spec, type SpecId } from '../data/specs';
-import { curlSpeeds } from '../sim/autopilot';
+import { curlSpeeds } from '../sim/assist';
 import { RAMP, curlTopHeight } from '../sim/track';
 
 const AIR = '#3e6ae1';
@@ -158,7 +158,7 @@ ${[1, 2, 3, 4].map((i) => `.demo .p${i}{animation-delay:${(i * 0.06).toFixed(2)}
 ${puffs}
 <g class="car">${carGlyph(1, jets)}</g>
 </svg>
-<figcaption>The jump, on a loop. Ramp shape and proportions follow the reported 170° and ~${Math.round(curlTopHeight(RAMP))}&nbsp;m; the circle is our estimate.</figcaption>
+<figcaption>The jump on a loop. The ramp follows the reported 170° and about ${Math.round(curlTopHeight(RAMP))}&nbsp;m; its circular shape is our estimate.</figcaption>
 </figure>`;
 }
 
@@ -192,7 +192,7 @@ ${up}
 <text x="102" y="228" text-anchor="middle" fill="${JET}">skirt</text><text x="558" y="228" text-anchor="middle" fill="${JET}">skirt</text>
 <text x="330" y="246" text-anchor="middle" fill="${MUTED}">under the floor: slightly lower pressure</text>
 </svg>
-<figcaption>Fans pull air out from under the sealed floor. With less air underneath, the air above presses the car down, even when it is standing still.</figcaption>
+<figcaption>Side view. The fans keep the pressure under the floor slightly low, even when the car is standing still.</figcaption>
 </figure>`;
 }
 
@@ -227,7 +227,7 @@ ${dot(578, 120, JET)}${dot(578, 180, JET)}
 <text x="604" y="262" text-anchor="end" fill="${JET}">2 turning nozzles</text>
 <text x="350" y="290" text-anchor="middle" fill="${MUTED}">front →</text>
 </svg>
-<figcaption>Rocket version, seen from above. Tank 1 sits behind the seats; tank 2 takes the passenger's place. The nozzle layout is MotorTrend's reading of the reveal, not an official drawing.</figcaption>
+<figcaption>Rocket version from above. Tank 1 sits behind the seats and tank 2 takes the passenger's place. The nozzle layout follows MotorTrend's analysis of the reveal.</figcaption>
 </figure>`;
 }
 
@@ -254,7 +254,7 @@ ${flow}
 <text x="590" y="154" text-anchor="middle" fill="${AIR}">jet</text>
 <text x="320" y="236" text-anchor="middle" fill="${MUTED}">arrow length ≈ air speed</text>
 </svg>
-<figcaption>Squeezed through the throat, the air reaches the speed of sound; the flaring bell lets it speed up further before it leaves.</figcaption>
+<figcaption>Cross-section of a nozzle.</figcaption>
 </figure>`;
 }
 
@@ -293,7 +293,7 @@ function gripFigure(r: Refs): string {
 <title id="grip-t">How hard the car can push: tires alone about 1.26 g, with fans over 2 g, with thrusters about 4.6 g</title>
 ${rows}
 </svg>
-<figcaption>How hard the car can accelerate or corner.${refs} The last figure is CellCog's arithmetic from the claimed 0–60 time.</figcaption>
+<figcaption>Maximum acceleration or cornering force.${refs} The last figure is CellCog's arithmetic from the claimed 0–60 time.</figcaption>
 </figure>`;
 }
 
@@ -310,42 +310,42 @@ export function articleHtml(opts: { backLink?: string } = {}): string {
   parts.push(`<article class="article">`);
   if (opts.backLink)
     parts.push(`<p class="back"><a href="${opts.backLink}">← Back to the simulator</a></p>`);
-  parts.push(`<h1>How the Tesla Roadster flies</h1>
-<p class="lede">On ${s('revealDate')}, at SpaceX's test site in McGregor, Texas${r.cite('revealVenue')}, a Roadster drove up a ramp that curls over until the car is upside down. It hung there, dropped off the end, flipped over in mid-air and landed on its wheels. It does this with two tricks: fans that suck it onto the road, and jets of compressed air that push it. Here is how both work.</p>
+  parts.push(`<h1>How it works</h1>
+<p class="lede">On ${s('revealDate')}, at SpaceX's test site in McGregor, Texas${r.cite('revealVenue')}, a Roadster drove up a ramp that curls over until the car is upside down. It hung there, dropped off the end, rolled over in mid-air and landed on its wheels. Fans under the floor suck it onto the road, and jets of compressed air push it.</p>
 ${demoFigure()}
 
-<h2>Fans that suck the car down</h2>
+<h2>Suction</h2>
 <p>Under the floor are fans, and skirts that close the gap between the car and the road. The fans pump air out from under the car. With less air underneath, the air above pushes the car down harder than the air below pushes it up.</p>
-<p>It doesn't take much. On the ramp, the car's downforce readout said ${s('invertedDownforce')}. Spread over a floor of ${esc(value(SPECS.floorArea))} (our estimate), that is only about ${calc('suctionPercent')} less pressure under the car than around it. That's roughly the drop in air pressure between sea level and a hilltop about ${Math.round(derived().hillAltitude!.value / 100) / 10}&nbsp;km up.</p>
-<p>Because the push comes through the car's own floor, it works on any surface: a road, a wall or a ceiling. That is what holds the car on the ramp upside down. The suction is about twice the car's weight. It also makes the tires grip harder.</p>
+<p>On the ramp, the car's downforce readout said ${s('invertedDownforce')}. Spread over a floor of ${esc(value(SPECS.floorArea))} (our estimate), that is only about ${calc('suctionPercent')} less pressure under the car than around it, roughly the drop in air pressure between sea level and a hilltop ${Math.round(derived().hillAltitude!.value / 100) / 10}&nbsp;km up.</p>
+<p>The push comes through the car's own floor, so it works on a wall or a ceiling as well as on a road. On the ramp it is about twice the car's weight, enough to hold the car there upside down. It also presses the tires harder onto the road, so they grip better.</p>
 ${suctionFigure()}
 ${gripFigure(r)}
 
-<h2>A tank of air instead of rocket fuel</h2>
-<p>Nothing burns. The car carries air, mostly nitrogen, squeezed into carbon-fibre tanks. The Rocket version has ${s('airVolumeTotal')} of tanks holding ${s('airMass')} of air, stored at ${s('thrusterPressure')}, roughly ${timesAtm} times normal air pressure.</p>
-<p>When a valve opens, the air rushes out through a nozzle and pushes the car the other way, like a balloon you let go of, only far stronger. The Rocket has ${s('nozzleCount')} nozzles: four at the back to push it forward, four underneath to lift it, and two at the nose to turn it.</p>
+<h2>Air tanks</h2>
+<p>Nothing burns. The car carries air, mostly nitrogen, squeezed into carbon-fibre tanks. The Rocket version has ${s('airVolumeTotal')} of tanks holding ${s('airMass')} of air at ${s('thrusterPressure')}, about ${timesAtm} times normal air pressure.</p>
+<p>When a valve opens, the air rushes out through a nozzle and pushes the car the other way, like a balloon you let go of. The Rocket has ${s('nozzleCount')} nozzles: four at the back push it forward, four underneath lift it, and two at the nose turn it.</p>
 ${layoutFigure()}
 
-<h2>How a nozzle makes thrust</h2>
-<p>Each nozzle narrows to a throat and then flares out like a bell. In the throat the air reaches the speed of sound. The bell lets it speed up even more, to about ${calc('exhaustVelocity')} in our model. The four rear nozzles together push with ${s('rearThrustTotal')}. That thrust doesn't go through the tires, so it simply adds to whatever the tires can do.</p>
-<p>Valves like these are either fully open or fully shut. For half power, they open for half of every split second, flickering many times a second.</p>
+<h2>Nozzles</h2>
+<p>Each nozzle narrows to a throat and then flares out like a bell. In the throat the air reaches the speed of sound, and in the bell it speeds up further, to about ${calc('exhaustVelocity')} in our model. The four rear nozzles together push with ${s('rearThrustTotal')}. That force doesn't depend on tire grip, so it adds to whatever the tires can do.</p>
+<p>The valves are either fully open or fully shut. For half power, a valve opens and shuts many times a second and stays open half of the time.</p>
 ${nozzleFigure()}
 
-<h2>The jump, step by step</h2>
+<h2>The jump</h2>
 ${stepsFigure()}
 <ol>
-<li><strong>Up the wall.</strong> The car drives up at a modest speed, about ${climbKmh}&nbsp;km/h in our simulation. Suction and the curve press it onto the ramp.</li>
-<li><strong>Upside down.</strong> At the top, about ${top}&nbsp;m${r.cite('rampHeight')} up, it hangs upside down. The suction is about twice its weight, so it doesn't fall.</li>
-<li><strong>Off the edge.</strong> At the end of the ramp the skirts lose their seal. The suction disappears in a fraction of a second and the car drops.</li>
-<li><strong>The roll.</strong> The lift nozzles fire on one side only and roll the car over. Half a turn takes well under a second.</li>
-<li><strong>The landing.</strong> The car falls, then fires all four lift nozzles just before touchdown to brake. That's the huge white cloud: the escaping air gets so cold that moisture freezes out of it as fog. The landing readout showed ${s('landingG')}.</li>
+<li>The car drives up the ramp at about ${climbKmh}&nbsp;km/h (the speed our simulation uses). Suction and the curve press it onto the surface.</li>
+<li>At the top, about ${top}&nbsp;m${r.cite('rampHeight')} up, it hangs upside down, held by the suction.</li>
+<li>At the end of the ramp the skirts lose their seal. The suction is gone in a fraction of a second and the car drops.</li>
+<li>The lift nozzles on one side fire and roll the car over. Half a turn takes about half a second.</li>
+<li>Just before touchdown all four lift nozzles fire to brake the fall. The jets are cold enough to turn moisture in the air into the white cloud. The landing readout showed ${s('landingG')}.</li>
 </ol>
 
-<h2>The limits</h2>
-<p>A full tank lasts ${s('cellcogFullThrust')} of full thrust; our model says ${calc('fullThrustSeconds')}. Refilling from a nitrogen supply takes ${s('refillHoursMin')} to ${s('refillHoursMax')}. ${esc(String(SPECS.selfRefill.value))}${r.cite('selfRefill')}. So the car hops; it doesn't fly. The Rocket version is ${esc(String(SPECS.rocketAccess.value).toLowerCase())}${r.cite('rocketAccess')}.</p>
+<h2>Limits</h2>
+<p>A full tank lasts ${s('cellcogFullThrust')} of full thrust; our model says ${calc('fullThrustSeconds')}. That is enough air for a hop, not for flying around. Refilling from a nitrogen supply takes ${s('refillHoursMin')} to ${s('refillHoursMax')}; ${esc(String(SPECS.selfRefill.value))}${r.cite('selfRefill')}. The Rocket version is ${esc(String(SPECS.rocketAccess.value).toLowerCase().replace('; ', ' and '))}${r.cite('rocketAccess')}.</p>
 
-<h2>What we know and what we guessed</h2>
-<p>Numbers with a small reference come from coverage of the reveal on ${esc(String(SPECS.revealDate.value))}. Some things weren't published: the car's weight, the floor area, the exact ramp shape and the strength of the lift nozzles. For those, the simulator uses our own estimates, and some outlets disagree on details such as the nozzle layout. The full list, with every number and its status, is in the project's <a href="https://github.com/eduardmur/tesla-roadster-simulator/blob/main/src/data/specs.ts">specs file</a>.</p>
+<h2>Estimates</h2>
+<p>Numbers with a small reference come from coverage of the reveal on ${esc(String(SPECS.revealDate.value))}. Some were never published: the car's weight, the floor area, the exact ramp shape and the strength of the lift nozzles. For those the simulator uses our own estimates. Outlets also disagree on some details, such as the nozzle layout. Every number and its status is listed in the project's <a href="https://github.com/eduardmur/tesla-roadster-simulator/blob/main/src/data/specs.ts">specs file</a>.</p>
 
 <h2>Sources</h2>
 <ol class="sources">

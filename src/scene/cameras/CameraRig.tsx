@@ -1,6 +1,8 @@
 /**
- * Cameras. The autopilot run cuts between fixed "film" shots like the reveal footage;
- * driving yourself uses a chase camera. A director override exists for scripted captures.
+ * Cameras. Driving to the ramp uses a chase camera; once the car is on the curl it cuts between
+ * fixed "film" shots like the reveal footage (beside the ramp, the drop, the landing), then a
+ * slow orbit. Driving on after a run is back to the chase camera. A director override exists
+ * for scripted captures.
  */
 import { useFrame, useThree } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
@@ -9,7 +11,7 @@ import { host } from '../../app/host';
 import { useApp } from '../../state/store';
 import { director } from './director';
 
-type ShotId = 'idle' | 'approach' | 'side' | 'flight' | 'landing' | 'done' | 'chase';
+type ShotId = 'idle' | 'side' | 'flight' | 'landing' | 'done' | 'chase';
 
 const WORLD_UP = new THREE.Vector3(0, 1, 0);
 
@@ -45,15 +47,16 @@ export function CameraRig({ carRef }: { carRef: React.RefObject<THREE.Group | nu
 
     // Pick the shot.
     let shot: ShotId;
-    if (app.mode === 'manual') shot = 'chase';
-    else if (app.mode === 'done') shot = 'done';
+    if (app.mode === 'done') shot = 'done';
     else if (app.mode === 'idle') shot = 'idle';
     else if (app.stage === 'flight')
       shot = t && t.altitude < 6 && t.velocity[1] < 0 ? 'landing' : 'flight';
     else if (app.stage === 'climb' || app.stage === 'inverted') shot = 'side';
-    else shot = 'approach';
-    const cut = shot !== shotRef.current;
-    if (cut) {
+    else shot = 'chase';
+    const prev = shotRef.current;
+    // Film shots cut; pulling away into the chase camera eases from wherever the camera was.
+    const cut = shot !== prev && !(shot === 'chase' && (prev === 'idle' || prev === 'done'));
+    if (shot !== prev) {
       shotRef.current = shot;
       // Low on the runway, between the lamp rows, looking back at the car.
       if (shot === 'landing') v.anchor.set(p.x + 4.5, 1.1, p.z - 13);
@@ -69,16 +72,10 @@ export function CameraRig({ carRef }: { carRef: React.RefObject<THREE.Group | nu
         // Low behind the car, the ramp towering ahead (pulled back on tall, narrow screens).
         const narrow = state.size.width < state.size.height;
         v.pos.set(p.x - (narrow ? 0.6 : 1.8), narrow ? 1.6 : 1.0, p.z - (narrow ? 11 : 7.5));
-        v.look.set(0, narrow ? 6 : 4.5, p.z + 14);
+        v.look.set(0, narrow ? 2.2 : 4.5, p.z + 14);
         fov = narrow ? 62 : 50;
         break;
       }
-      case 'approach':
-        v.pos.set(p.x - 1.2, 1.2, p.z - 8);
-        v.look.set(p.x, 3, p.z + 12);
-        fov = 50;
-        stiffness = 6;
-        break;
       case 'side':
         v.pos.set(26, 7, -9);
         v.look.copy(p);
