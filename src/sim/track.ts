@@ -82,6 +82,25 @@ export function curlSurface(c: CurlSpec, segments = 96): SurfaceMesh {
 /** The approach runway in front of the ramp. */
 export const RUNWAY = { x: 0, start: -170, end: RAMP.z0, width: 14, lampSpacing: 10 };
 
+/** The test site: a round pad with a concrete wall around it, so nobody drives off the world. */
+export const SITE = { x: 0, z: -200, radius: 600, wallHeight: 1.2, segments: 120 };
+
+/** Straight wall segments around the site (centre, yaw about +Y, length). */
+export function wallSegments(): { x: number; z: number; yaw: number; length: number }[] {
+  const n = SITE.segments;
+  const length = 2 * SITE.radius * Math.sin(Math.PI / n) + 0.4;
+  return Array.from({ length: n }, (_, i) => {
+    const a = (i / n) * Math.PI * 2;
+    return {
+      x: SITE.x + Math.cos(a) * SITE.radius,
+      z: SITE.z + Math.sin(a) * SITE.radius,
+      // The segment runs along the tangent of the circle.
+      yaw: -a + Math.PI / 2,
+      length,
+    };
+  });
+}
+
 export interface Spawn {
   position: V3;
   /** Heading about Y; 0 = facing +Z (toward the ramp). */

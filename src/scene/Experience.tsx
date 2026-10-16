@@ -21,6 +21,7 @@ import {
   NightSky,
   RunwayLamps,
   Searchlights,
+  SiteWall,
 } from './environment/Night';
 import { Ramp } from './environment/Ramp';
 
@@ -198,6 +199,7 @@ export default function Experience() {
       <NightSky />
       <Ground />
       <RunwayLamps />
+      <SiteWall />
       <LightPanels />
       <Searchlights reducedMotion={reducedMotion} />
       <Drones reducedMotion={reducedMotion} />

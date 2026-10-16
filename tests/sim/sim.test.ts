@@ -1,8 +1,14 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { SIXTY_MPH, buildVehicleParams, simulateLaunch, type TrimId } from '../../src/physics';
+import {
+  SIXTY_MPH,
+  buildVehicleParams,
+  motorForce,
+  simulateLaunch,
+  type TrimId,
+} from '../../src/physics';
 import { applyRampAssist } from '../../src/sim/assist';
 import { JumpMonitor } from '../../src/sim/jump';
-import { RAMP, curlAngleAt } from '../../src/sim/track';
+import { RAMP, SITE, curlAngleAt } from '../../src/sim/track';
 import { NO_INPUT } from '../../src/sim/types';
 import { Sim, loadRapier } from '../../src/sim/world';
 
@@ -114,6 +120,31 @@ describe('3D sim', () => {
     }
     sim.updateTelemetry();
     expect(sim.telemetry.forwardSpeed).toBeGreaterThan(30);
+    sim.dispose();
+  });
+
+  it('the motors fade out at the reported top-speed target (230 mph)', () => {
+    const p = buildVehicleParams('rocket');
+    expect(p.topSpeed * 3.6).toBeCloseTo(370, 0);
+    expect(motorForce(p, p.topSpeed - 2)).toBeGreaterThan(5000);
+    expect(motorForce(p, p.topSpeed)).toBe(0);
+  });
+
+  it('flat out away from the ramp, the wall stops the car before the edge of the world', () => {
+    const sim = new Sim('rocket');
+    sim.reset({ position: [RAMP.x, 0, -32], yaw: Math.PI });
+    let fastest = 0;
+    for (let i = 0; i < 120 * 30; i++) {
+      sim.updateTelemetry();
+      fastest = Math.max(fastest, sim.telemetry.speed);
+      sim.input = { ...NO_INPUT, throttle: 1 };
+      sim.step();
+    }
+    sim.updateTelemetry();
+    const [x, y, z] = sim.telemetry.position;
+    expect(fastest * 3.6).toBeLessThan(372);
+    expect(Math.hypot(x - SITE.x, z - SITE.z)).toBeLessThan(SITE.radius);
+    expect(y).toBeGreaterThan(-1);
     sim.dispose();
   });
 

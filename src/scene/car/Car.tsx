@@ -174,48 +174,54 @@ export function Car({ carRef }: { carRef: React.RefObject<THREE.Group | null> })
         <boxGeometry args={[1.0, 0.07, 0.01]} />
       </mesh>
 
-      {/* Rear: black light band with a full-width red bar (a small ducktail at the corners) */}
-      <mesh position={[0, 0.355, TAIL_Z + 0.01]} material={m.gloss}>
-        <boxGeometry args={[1.84, 0.1, 0.1]} />
+      {/* Rear: the black band, corners and lower section are painted on the tail (see body.ts);
+          the red bar runs across the band, the blank plate sits low on the body-colour panel. */}
+      <mesh position={[0, 0.365, TAIL_Z - 0.004]} material={m.rear}>
+        <boxGeometry args={[1.62, 0.026, 0.012]} />
       </mesh>
-      <mesh position={[0, 0.36, TAIL_Z - 0.045]} material={m.rear}>
-        <boxGeometry args={[1.66, 0.024, 0.012]} />
+      <mesh position={[0, 0.13, TAIL_Z - 0.004]} material={m.gloss}>
+        <boxGeometry args={[0.5, 0.125, 0.006]} />
       </mesh>
-      {/* Blank plate */}
-      <mesh position={[0, 0.17, TAIL_Z - 0.004]} material={m.gloss}>
-        <boxGeometry args={[0.5, 0.13, 0.006]} />
+      <mesh position={[0, 0.13, TAIL_Z - 0.008]} material={m.plate}>
+        <boxGeometry args={[0.47, 0.1, 0.006]} />
       </mesh>
-      <mesh position={[0, 0.17, TAIL_Z - 0.008]} material={m.plate}>
-        <boxGeometry args={[0.47, 0.105, 0.006]} />
-      </mesh>
-      {/* Diffuser: the four rear thrusters sit in its face, fins below */}
-      <mesh position={[0, -0.16, TAIL_Z + 0.02]} material={m.gloss}>
-        <boxGeometry args={[1.62, 0.42, 0.18]} />
+      {/* Black lower section: a beam carrying the four thruster rings, fins below, side cheeks
+          and a diffuser lip */}
+      <mesh position={[0, -0.03, TAIL_Z - 0.06]} material={m.gloss}>
+        <boxGeometry args={[1.5, 0.12, 0.12]} />
       </mesh>
       {REAR_NOZZLES.map((n) => (
         <mesh
           key={`ring-${n.id}`}
-          position={[n.position[0], n.position[1], TAIL_Z - 0.072]}
+          position={[n.position[0], -0.03, TAIL_Z - 0.122]}
           material={m.ring}
         >
-          <torusGeometry args={[0.058, 0.009, 10, 32]} />
+          <torusGeometry args={[0.052, 0.009, 10, 32]} />
         </mesh>
       ))}
       {[-0.42, 0, 0.42].map((x) => (
         <mesh
           key={`sensor-${x}`}
-          position={[x, -0.12, TAIL_Z - 0.071]}
+          position={[x, -0.03, TAIL_Z - 0.121]}
           rotation-x={Math.PI / 2}
           material={m.dark}
         >
-          <cylinderGeometry args={[0.022, 0.022, 0.01, 20]} />
+          <cylinderGeometry args={[0.02, 0.02, 0.01, 20]} />
         </mesh>
       ))}
-      {[-0.6, -0.4, -0.2, 0, 0.2, 0.4, 0.6].map((x) => (
-        <mesh key={`fin-${x}`} position={[x, -0.29, TAIL_Z - 0.09]} material={m.gloss}>
-          <boxGeometry args={[0.012, 0.15, 0.22]} />
+      {[-0.5, -0.25, 0, 0.25, 0.5].map((x) => (
+        <mesh key={`fin-${x}`} position={[x, -0.21, TAIL_Z - 0.08]} material={m.gloss}>
+          <boxGeometry args={[0.03, 0.24, 0.2]} />
         </mesh>
       ))}
+      {[-1, 1].map((sx) => (
+        <mesh key={`cheek-${sx}`} position={[sx * 0.75, -0.15, TAIL_Z - 0.08]} material={m.gloss}>
+          <boxGeometry args={[0.06, 0.36, 0.2]} />
+        </mesh>
+      ))}
+      <mesh position={[0, -0.33, TAIL_Z - 0.09]} rotation-x={0.12} material={m.gloss}>
+        <boxGeometry args={[1.56, 0.025, 0.22]} />
+      </mesh>
 
       {/* Small side cameras ahead of the windows, red side markers at the rear */}
       {[-1, 1].map((s) => (

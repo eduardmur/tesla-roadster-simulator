@@ -37,7 +37,7 @@ import {
   type SuctionRuntime,
   type ThrustResult,
 } from './forces';
-import { RAMP, SPAWNS, curlSurface, type Spawn, type SpawnId } from './track';
+import { RAMP, SPAWNS, curlSurface, wallSegments, type Spawn, type SpawnId } from './track';
 import { NO_INPUT, emptyTelemetry, type DriveInput, type Telemetry } from './types';
 import { createWheels, readPose, rv, stepWheels, type Pose, type WheelRuntime } from './vehicle';
 
@@ -130,6 +130,17 @@ export class Sim {
       R.ColliderDesc.trimesh(m.positions, m.indices).setFriction(1),
     );
     this.labels.set(ramp.handle, 'curl');
+
+    // The wall around the site (taller than it looks, so nothing hops over it).
+    for (const w of wallSegments()) {
+      const wall = this.world.createCollider(
+        R.ColliderDesc.cuboid(w.length / 2, 2, 0.3)
+          .setTranslation(w.x, 2, w.z)
+          .setRotation({ x: 0, y: Math.sin(w.yaw / 2), z: 0, w: Math.cos(w.yaw / 2) })
+          .setFriction(0.6),
+      );
+      this.labels.set(wall.handle, 'wall');
+    }
 
     this.body = this.world.createRigidBody(
       R.RigidBodyDesc.dynamic()

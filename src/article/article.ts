@@ -305,7 +305,9 @@ export function articleHtml(opts: { backLink?: string } = {}): string {
   const top = Math.round(curlTopHeight(RAMP));
   const timesAtm =
     Math.round((SPECS.thrusterPressure.value * 6894.757) / SPECS.ambientPressure.value / 5) * 5;
-  const climbKmh = Math.round((curlSpeeds(RAMP).entry * 3.6) / 5) * 5;
+  const kmh5 = (v: number) => Math.round((v * 3.6) / 5) * 5;
+  const entryKmh = kmh5(curlSpeeds(RAMP).entry);
+  const climbKmh = kmh5(curlSpeeds(RAMP).climb);
   const parts: string[] = [];
   parts.push(`<article class="article">`);
   if (opts.backLink)
@@ -334,7 +336,7 @@ ${nozzleFigure()}
 <h2>The jump</h2>
 ${stepsFigure()}
 <ol>
-<li>The car drives up the ramp at about ${climbKmh}&nbsp;km/h (the speed our simulation uses). Suction and the curve press it onto the surface.</li>
+<li>The car reaches the ramp at about ${entryKmh}&nbsp;km/h and climbs at about ${climbKmh}&nbsp;km/h (the speeds our simulation uses). Suction and the curve press it onto the surface.</li>
 <li>At the top, about ${top}&nbsp;m${r.cite('rampHeight')} up, it hangs upside down, held by the suction.</li>
 <li>At the end of the ramp the skirts lose their seal. The suction is gone in a fraction of a second and the car drops.</li>
 <li>The lift nozzles on one side fire and roll the car over. Half a turn takes about half a second.</li>

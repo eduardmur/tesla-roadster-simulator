@@ -124,6 +124,8 @@ export interface VehicleParams {
   mu: number;
   motorPeakForce: number;
   motorPeakPower: number;
+  /** Electronic limiter: the motors fade out at this speed, m/s. */
+  topSpeed: number;
   dragArea: number;
   rollingResistance: number;
   env: Environment;
@@ -306,6 +308,7 @@ export function buildVehicleParams(trim: TrimId, whatIf: WhatIf = reportedWhatIf
     mu: SPECS.tireOnlyGrip.value,
     motorPeakForce: SPECS.motorPeakForce.value * 1000,
     motorPeakPower: SPECS.motorPeakPower.value * 1000,
+    topSpeed: SPECS.topSpeed.value * MPH,
     dragArea: SPECS.dragArea.value,
     rollingResistance: SPECS.rollingResistance.value,
     env,
@@ -316,7 +319,9 @@ export function buildVehicleParams(trim: TrimId, whatIf: WhatIf = reportedWhatIf
 /** Tractive force the motors can deliver at speed v (before the tire limit). */
 export function motorForce(params: VehicleParams, speed: number, throttle = 1): number {
   const v = Math.max(Math.abs(speed), 0.1);
-  return throttle * Math.min(params.motorPeakForce, params.motorPeakPower / v);
+  // Limiter at the top-speed target: the motors fade out over the last 2 m/s.
+  const limiter = Math.min(1, Math.max(0, (params.topSpeed - v) / 2));
+  return throttle * limiter * Math.min(params.motorPeakForce, params.motorPeakPower / v);
 }
 
 export function thrusterGroup(

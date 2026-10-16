@@ -6,7 +6,7 @@
 import { useFrame } from '@react-three/fiber';
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { RAMP, RUNWAY } from '../../sim/track';
+import { RAMP, RUNWAY, SITE, wallSegments } from '../../sim/track';
 
 export const NIGHT = '#030406';
 const f = (n: number) => n.toFixed(3);
@@ -137,6 +137,52 @@ export function RunwayLamps() {
       <boxGeometry args={[0.35, 0.22, 0.35]} />
       <meshBasicMaterial color={[2.5, 0.15, 0.1]} toneMapped={false} />
     </instancedMesh>
+  );
+}
+
+/** The low concrete wall around the site, topped with a line of red lamps you can see from afar. */
+export function SiteWall() {
+  const wall = useRef<THREE.InstancedMesh>(null);
+  const lamps = useRef<THREE.InstancedMesh>(null);
+  const segs = useMemo(() => wallSegments(), []);
+  const PER = 4;
+  useLayoutEffect(() => {
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const up = new THREE.Vector3(0, 1, 0);
+    segs.forEach((s, i) => {
+      q.setFromAxisAngle(up, s.yaw);
+      m.compose(
+        new THREE.Vector3(s.x, SITE.wallHeight / 2, s.z),
+        q,
+        new THREE.Vector3(s.length, SITE.wallHeight, 0.5),
+      );
+      wall.current?.setMatrixAt(i, m);
+      const along = new THREE.Vector3(1, 0, 0).applyQuaternion(q);
+      for (let k = 0; k < PER; k++) {
+        const d = ((k + 0.5) / PER - 0.5) * s.length;
+        m.compose(
+          new THREE.Vector3(s.x + along.x * d, SITE.wallHeight + 0.1, s.z + along.z * d),
+          q,
+          new THREE.Vector3(0.9, 0.2, 0.3),
+        );
+        lamps.current?.setMatrixAt(i * PER + k, m);
+      }
+    });
+    if (wall.current) wall.current.instanceMatrix.needsUpdate = true;
+    if (lamps.current) lamps.current.instanceMatrix.needsUpdate = true;
+  }, [segs]);
+  return (
+    <group>
+      <instancedMesh ref={wall} args={[undefined, undefined, segs.length]} receiveShadow>
+        <boxGeometry />
+        <meshStandardMaterial color="#8a8c90" roughness={0.9} />
+      </instancedMesh>
+      <instancedMesh ref={lamps} args={[undefined, undefined, segs.length * PER]}>
+        <boxGeometry />
+        <meshBasicMaterial color={[4, 0.25, 0.15]} toneMapped={false} />
+      </instancedMesh>
+    </group>
   );
 }
 

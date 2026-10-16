@@ -126,7 +126,7 @@ export class JumpMonitor {
       !this.roofHit &&
       this.landingAngle < (45 * Math.PI) / 180;
     const entry = this.entrySpeed ?? 0;
-    const tooFast = entry > curlSpeeds(RAMP).entry * 1.8;
+    const tooFast = entry > curlSpeeds(RAMP).safeMax;
     let headline: string;
     if (landed && this.peakG > 8) headline = `Landed, but hard: ${Math.round(this.peakG)} g`;
     else if (landed) headline = 'Landed on its wheels';

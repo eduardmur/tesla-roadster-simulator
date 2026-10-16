@@ -43,6 +43,8 @@ drive, A to go again).
   nozzles to the reported 3.3 g landing readout.
 - **A flight computer** rolls the car upright and does a "suicide burn" landing.
 - The ramp follows the reported geometry: a 170° curl about 21 m high (R ≈ 10.6 m).
+- Top speed is limited at the reported target of over 230 mph (about 370 km/h). The test site is
+  a 600 m-radius pad with a wall around it.
 
 Every number comes from [`src/data/specs.ts`](src/data/specs.ts), tagged `reported` (with a
 source), `estimate` or `confirmed`. Physics notes: [docs/PHYSICS.md](docs/PHYSICS.md). Sources:

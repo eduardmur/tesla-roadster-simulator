@@ -91,8 +91,8 @@ const SHOULDER_Y: Key[] = [
   [0.2, 0.26],
   [-0.7, 0.3],
   [REAR_AXLE, 0.38],
-  [-1.9, 0.36],
-  [TAIL, 0.33],
+  [-1.9, 0.37],
+  [TAIL, 0.38],
 ];
 /** Half-width at the shoulder (plan view: chamfered nose and tail). */
 const SHOULDER_W: Key[] = [
@@ -326,6 +326,11 @@ float z = vLocal.z;
 // Black sill below the rocker crease, rising behind the rear wheel toward the shoulder.
 float sillTop = 3.0 + clamp((-1.66 - z) * 3.2, 0.0, 0.88);
 float trim = 1.0 - edge(vU, sillTop);
+// Rear face (tail cap, section 9): a black light band along the top, a black lower section
+// and narrow black corners framing a wide body-colour panel.
+float cap = edge(vU, 8.5);
+float capBlack = max(max(edge(vLocal.y, 0.33), 1.0 - edge(vLocal.y, 0.055)), edge(ax, 0.8));
+trim = max(trim, cap * capBlack);
 // Side windows: the whole window band between the beltline and the roof rail.
 float side = band(vU, 5.03, 5.97);
 side *= 1.0 - seam(z, 0.12, 0.006);
@@ -391,17 +396,19 @@ export function bodyGeometry(stations = 220): THREE.BufferGeometry {
     let cx = 0;
     let cy = 0;
     const cz = pos[ringStart * 3 + 2]!;
+    // Section 4.2 paints the nose cap body colour; 9 marks the tail cap for the shader.
+    const capSection = flip ? 4.2 : 9;
     for (let j = 0; j < RING; j++) {
       const x = pos[(ringStart + j) * 3]!;
       const y = pos[(ringStart + j) * 3 + 1]!;
       cx += x;
       cy += y;
       pos.push(x, y, cz);
-      sec.push(4.2);
+      sec.push(capSection);
     }
     const center = pos.length / 3;
     pos.push(cx / RING, cy / RING, cz);
-    sec.push(4.2);
+    sec.push(capSection);
     for (let j = 0; j < RING; j++) {
       const j2 = (j + 1) % RING;
       if (flip) idx.push(center, base + j, base + j2);

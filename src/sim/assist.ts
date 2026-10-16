@@ -14,9 +14,15 @@ export function speedControl(speed: number, target: number): { throttle: number;
   };
 }
 
-/** Safe run-in and climb speeds (m/s): slow enough that v²/R stays inside the suspension travel. */
-export function curlSpeeds(curl: CurlSpec): { entry: number; climb: number } {
-  return curl.radius > 8 ? { entry: 11, climb: 9 } : { entry: 9, climb: 7.5 };
+/**
+ * Run-in and climb speeds (m/s) that keep v²/R inside the suspension travel. On the reported
+ * curl, entries up to ~70 km/h land reliably in the sim (with the climb held near 32 km/h);
+ * from ~75 km/h the suspension bottoms out and the car bounces off. `safeMax` marks that edge.
+ */
+export function curlSpeeds(curl: CurlSpec): { entry: number; climb: number; safeMax: number } {
+  return curl.radius > 8
+    ? { entry: 16.5, climb: 9, safeMax: 19.5 }
+    : { entry: 9, climb: 7.5, safeMax: 13 };
 }
 
 /**

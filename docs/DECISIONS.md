@@ -122,6 +122,25 @@ More feedback from the project owner after v2.0:
 - **Shorter article.** Headings are one or two words ("Suction", "Air tanks", "Nozzles"…), and the
   text was edited to cut filler.
 
+## v2.2: limits
+
+- **Ramp approach limit 60 km/h, not 40.** The owner asked why the car slows down before the
+  ramp. Without a limit, a "hold W" run from the start reaches the curl at well over 100 km/h,
+  and in the sim the curl only works up to about 70 km/h: from about 75 km/h the curve load
+  (v²/R on a 10.6 m radius) bottoms out the suspension and the car bounces off. So the assist
+  still caps the approach, now at 60 km/h, and holds the climb near 32 km/h. Approaching at
+  60 km/h or less, you don't notice it.
+- **Top speed: limited at the reported target (over 230 mph ≈ 370 km/h).** The motor and drag
+  model alone would top out near 410 km/h, approaching it so slowly that the speed seemed to grow
+  forever. The motors now fade out over the last 2 m/s below 230 mph. Treating the target as a
+  limiter is our estimate.
+- **A wall around the test site.** The ground used to end 1.5 km out, and a car driving flat out
+  fell off the edge and kept falling (which is why it seemed to accelerate without end). The site
+  is now a 600 m-radius pad inside a concrete wall topped with red lamps, so the car stops there.
+- **The rear follows the reference photo:** the black light band sits flush along the top of the
+  tail (no spoiler). Below it is a body-colour panel with a blank plate and narrow black corners.
+  The black lower section has a beam carrying the four thruster rings, fins and a diffuser lip.
+
 ## 3D app
 
 - **No downloaded visual assets.** The sky, ground, ramp and reflections (in-scene light panels)
@@ -133,7 +152,7 @@ More feedback from the project owner after v2.0:
   is ready. The non-compat build would be smaller but needs WASM bundler plugins in both Vite
   and Vitest.
 - **Slow climb on the reported curl.** Entering a 10.6 m radius loop at 80+ km/h is a ~5 g
-  pull-up that bottoms out any suspension. The speed assist enters at ~40 km/h and climbs at
+  pull-up that bottoms out any suspension. The speed assist enters at ~60 km/h and climbs at
   ~32 km/h, letting suction hold the car on. The peak load at touchdown in the sim is about 7 g,
   including the suspension hitting its stops. The reported in-car readout was 3.3 g.
 - **Ramp speed assist (on whenever you head for the ramp).** A naive "hold W" run reaches the curl far too

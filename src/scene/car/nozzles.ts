@@ -12,7 +12,10 @@ export function nozzleVisualPosition(n: NozzleLayout): THREE.Vector3 {
     p.y = st.yb - 0.005;
     p.x = Math.sign(p.x) * Math.min(Math.abs(p.x), st.wl - 0.1);
   }
-  // In the face of the rear diffuser.
-  if (n.id.startsWith('R')) p.z = -2.23;
+  // In the beam across the top of the black rear section.
+  if (n.id.startsWith('R')) {
+    p.y = -0.03;
+    p.z = -2.28;
+  }
   return p;
 }
