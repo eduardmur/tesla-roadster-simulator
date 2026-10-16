@@ -32,7 +32,16 @@ export default defineConfig({
   projects: [
     { name: 'chromium', use: { browserName: 'chromium' } },
     // Local cross-browser checks (CI runs chromium only): `npx playwright test --project=firefox`.
-    { name: 'firefox', use: { browserName: 'firefox', launchOptions: {} } },
+    {
+      name: 'firefox',
+      use: {
+        browserName: 'firefox',
+        // Headless Firefox needs WebGL forced on when there is no GPU.
+        launchOptions: {
+          firefoxUserPrefs: { 'webgl.force-enabled': true, 'webgl.disabled': false },
+        },
+      },
+    },
     { name: 'webkit', use: { browserName: 'webkit', launchOptions: {} } },
   ],
 });

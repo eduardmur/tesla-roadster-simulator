@@ -123,6 +123,14 @@ test('autopilot completes The Curl; X-ray opens mid-flight', async ({ page }) =>
   const result = await page.evaluate(() => window.__ft.host.lastResult);
   expect(result?.success).toBe(true);
   await shot(page, 'curl-result');
+  // "Your turn" replays the autopilot run as a ghost.
+  await page.getByRole('button', { name: 'Your turn (with ghost)' }).click();
+  await page.waitForTimeout(500);
+  expect(
+    await page.evaluate(
+      () => (window.__ft.host as unknown as { ghostVisible: boolean }).ghostVisible,
+    ),
+  ).toBe(true);
   expect(errors).toEqual([]);
 });
 

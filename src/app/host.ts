@@ -130,7 +130,8 @@ class Host {
         rot: info.pose.rot,
       });
     }
-    if (this.autopilot?.phase === 'landed' && sim.telemetry.speed < 1 && this.ghostRecording) {
+    // The autopilot run becomes the ghost as soon as its result is in.
+    if (this.ghostRecording && this.challenge?.phase === 'done') {
       this.ghost = this.ghostRecording;
       this.ghostRecording = null;
       this.emit();
