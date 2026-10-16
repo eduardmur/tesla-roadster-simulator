@@ -13,7 +13,7 @@ body:
     id: steps
     attributes:
       label: Steps to reproduce
-      placeholder: "1. Open the tour\n2. Chapter 2, tilt to 120°\n3. …"
+      placeholder: "1. Press Launch\n2. Wait for the car to reach the top of the ramp\n3. …"
     validations:
       required: true
   - type: input
@@ -27,4 +27,3 @@ body:
     id: console
     attributes:
       label: Console errors or screenshots
-      description: Press H to hide the UI for a clean screenshot.

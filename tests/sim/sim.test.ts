@@ -1,15 +1,9 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import {
-  SIXTY_MPH,
-  buildVehicleParams,
-  reportedWhatIf,
-  simulateLaunch,
-  type TrimId,
-} from '../../src/physics';
+import { SIXTY_MPH, buildVehicleParams, simulateLaunch, type TrimId } from '../../src/physics';
 import { applyRampAssist, createCurlAutopilot, laneSteer } from '../../src/sim/autopilot';
-import { createCurl } from '../../src/sim/challenges';
+import { JumpMonitor } from '../../src/sim/jump';
+import { RAMP, curlAngleAt } from '../../src/sim/track';
 import { NO_INPUT } from '../../src/sim/types';
-import { CURLS, curlAngleAt, type CurlSpec } from '../../src/sim/track';
 import { Sim, loadRapier } from '../../src/sim/world';
 
 beforeAll(async () => {
@@ -22,15 +16,14 @@ function settle(sim: Sim, seconds = 2) {
 }
 
 describe('3D sim', () => {
-  it('rests on its wheels with the fans holding ~46 kN', () => {
-    const sim = new Sim('performance');
-    sim.reset('drag');
+  it('parks in front of the ramp, on its wheels, with the fans holding ~46 kN', () => {
+    const sim = new Sim('rocket');
     settle(sim);
     const t = sim.telemetry;
     expect(t.wheelsInContact).toBe(4);
     expect(t.speed).toBeLessThan(0.1);
     expect(t.downforce).toBeGreaterThan(44_000);
-    expect(t.gVert).toBeCloseTo(1, 1);
+    expect(t.position[2]).toBeLessThan(RAMP.z0);
     sim.dispose();
   });
 
@@ -38,7 +31,7 @@ describe('3D sim', () => {
     '%s: 3D launch matches the 1D validation model within 3 %%',
     (trim) => {
       const sim = new Sim(trim);
-      sim.reset('drag');
+      sim.reset('flat');
       settle(sim);
       sim.input = { ...sim.input, throttle: 1 };
       sim.autoThrustUntil = SIXTY_MPH;
@@ -58,112 +51,75 @@ describe('3D sim', () => {
     },
   );
 
-  it.each([CURLS.curl, CURLS.practice] as CurlSpec[])('the autopilot completes $label', (curl) => {
+  it('the autopilot climbs the curl, leaves it upside down, rolls and lands', () => {
     const sim = new Sim('rocket');
-    sim.reset(curl.id);
-    const ap = createCurlAutopilot(curl);
+    const monitor = new JumpMonitor();
+    monitor.start(sim);
+    sim.listeners.add((s, info) => monitor.onStep(s, info));
+    const ap = createCurlAutopilot(RAMP);
     let maxAngle = 0;
     let invertedAtExit = 0;
-    let peakLandingG = 0;
-    for (let i = 0; i < 120 * 40; i++) {
+    for (let i = 0; i < 120 * 40 && !monitor.result; i++) {
       sim.updateTelemetry();
       sim.input = ap.input(sim.telemetry);
       sim.step();
       sim.updateTelemetry();
       const t = sim.telemetry;
-      if (t.surface === curl.id) maxAngle = Math.max(maxAngle, curlAngleAt(curl, t.position));
+      if (t.surface === 'curl') maxAngle = Math.max(maxAngle, curlAngleAt(RAMP, t.position));
       if (ap.phase === 'flight' && invertedAtExit === 0) invertedAtExit = t.upright;
-      if (ap.phase === 'flight' || ap.phase === 'landed')
-        peakLandingG = Math.max(peakLandingG, t.gTotal);
-      if (ap.phase === 'landed' && t.speed < 1) break;
     }
-    const t = sim.telemetry;
     expect(maxAngle * (180 / Math.PI)).toBeGreaterThan(165);
     expect(invertedAtExit).toBeLessThan(-0.9);
-    expect(ap.phase).toBe('landed');
-    expect(t.upright).toBeGreaterThan(0.95);
-    expect(peakLandingG).toBeLessThan(6);
-    expect(t.tankMass).toBeGreaterThan(50);
+    expect(monitor.result?.success).toBe(true);
+    expect(monitor.result!.peakG).toBeLessThan(6);
+    expect(monitor.result!.maxHeight).toBeGreaterThan(18);
+    expect(sim.telemetry.tankMass).toBeGreaterThan(50);
     sim.dispose();
   });
 
-  it.each([
-    [true, true],
-    [false, false],
-  ])('a player who just holds W: ramp assist %s → completes %s', (assist, completes) => {
-    const curl = CURLS.curl;
+  function naiveRun(assist: boolean) {
     const sim = new Sim('rocket');
-    const ch = createCurl('curl');
-    ch.start(sim);
-    sim.listeners.add((s, info) => ch.onStep(s, info));
-    for (let i = 0; i < 120 * 70 && ch.phase !== 'done'; i++) {
+    const monitor = new JumpMonitor();
+    monitor.start(sim);
+    sim.listeners.add((s, info) => monitor.onStep(s, info));
+    for (let i = 0; i < 120 * 70 && !monitor.result; i++) {
       sim.updateTelemetry();
       const t = sim.telemetry;
-      // Naive player: full throttle, keeps it straight, no flying input (assists do the rest).
+      // Naive player: full throttle, keeps it straight, no flying input (the assists do the rest).
       let input = {
         ...NO_INPUT,
         throttle: t.airborne ? 0 : 1,
-        steer: t.airborne ? 0 : laneSteer(t, curl.x),
+        steer: t.airborne ? 0 : laneSteer(t, RAMP.x),
       };
-      if (assist) input = applyRampAssist(input, t, curl);
+      if (assist) input = applyRampAssist(input, t, RAMP);
       sim.input = input;
       sim.step();
     }
-    expect(ch.phase).toBe('done');
-    expect(ch.result!.success).toBe(completes);
-    if (!completes) expect(ch.result!.headline).toMatch(/Too fast/);
     sim.dispose();
+    return monitor.result!;
+  }
+
+  it('a player who just holds W lands softly with the ramp assist, and much harder without it', () => {
+    const soft = naiveRun(true);
+    const hard = naiveRun(false);
+    expect(soft.success).toBe(true);
+    expect(soft.peakG).toBeLessThan(8);
+    expect(hard.peakG).toBeGreaterThan(soft.peakG * 1.5);
   });
 
-  it('suction keeps the car on the tilt rig when it turns into a ceiling', () => {
-    const sim = new Sim('performance');
-    sim.reset('tilt');
-    settle(sim, 1);
-    sim.tiltTarget = Math.PI;
-    for (let i = 0; i < 120 * 10; i++) sim.step();
-    sim.updateTelemetry();
-    const t = sim.telemetry;
-    expect(t.wheelsInContact).toBe(4);
-    expect(t.upright).toBeLessThan(-0.95);
-    expect(t.surface).toBe('tilt-rig');
-    sim.dispose();
-  });
-
-  it('without fans the car falls off the rig at the wall', () => {
-    const sim = new Sim('performance');
-    sim.reset('tilt');
+  it('without fans the car cannot stay on the ceiling part of the curl', () => {
+    const sim = new Sim('rocket');
     sim.fansOn = false;
-    settle(sim, 1);
-    sim.tiltTarget = Math.PI / 2;
-    for (let i = 0; i < 120 * 8; i++) sim.step();
-    sim.updateTelemetry();
-    expect(sim.telemetry.position[1]).toBeLessThan(3);
-    sim.dispose();
-  });
-
-  // Rapier keeps internal contact caches we cannot restore, so replays agree closely, not bit-exactly.
-  it('scrub-back restore replays the same run within centimetres', () => {
-    const sim = new Sim('rocket', reportedWhatIf());
-    sim.reset('hub');
-    settle(sim, 1);
-    sim.input = { ...sim.input, throttle: 1, steer: 0.3 };
-    for (let i = 0; i < 120; i++) sim.step();
-    const snap = sim.snapshot();
-    sim.input = { ...sim.input, thrust: 1 };
-    for (let i = 0; i < 240; i++) sim.step();
-    const a = sim.snapshot();
-    sim.restore(snap);
-    for (let i = 0; i < 240; i++) sim.step();
-    const b = sim.snapshot();
-    const travelled = Math.hypot(
-      a.pos[0] - snap.pos[0],
-      a.pos[1] - snap.pos[1],
-      a.pos[2] - snap.pos[2],
-    );
-    expect(travelled).toBeGreaterThan(50);
-    const diff = Math.hypot(b.pos[0] - a.pos[0], b.pos[1] - a.pos[1], b.pos[2] - a.pos[2]);
-    expect(diff / travelled).toBeLessThan(0.002);
-    expect(Math.abs(b.tank!.mass - a.tank!.mass)).toBeLessThan(0.1);
+    const monitor = new JumpMonitor();
+    monitor.start(sim);
+    sim.listeners.add((s, info) => monitor.onStep(s, info));
+    const ap = createCurlAutopilot(RAMP);
+    for (let i = 0; i < 120 * 40 && !monitor.result; i++) {
+      sim.updateTelemetry();
+      sim.input = ap.input(sim.telemetry);
+      sim.step();
+    }
+    expect(monitor.result?.success).toBe(false);
     sim.dispose();
   });
 });

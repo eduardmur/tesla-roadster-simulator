@@ -1,5 +1,5 @@
 /**
- * Pure, deterministic physics for Flying Tesla. No rendering imports:
+ * Pure, deterministic physics for the simulator. No rendering imports:
  * everything here runs in Node for unit tests and in the browser sim.
  */
 export * from './gas';

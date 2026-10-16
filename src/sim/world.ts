@@ -1,11 +1,11 @@
 /**
- * The simulation world: Rapier rigid bodies and colliders for the test pad, the car, and a
- * deterministic fixed-step loop (120 Hz) with pause, slow motion and a 10-second recorder.
+ * The simulation world: Rapier colliders for the ground and the curl ramp, the car, and a
+ * deterministic fixed-step loop (120 Hz).
  *
  * Rendering never writes to the sim; it reads poses and telemetry.
  */
 import RAPIER from '@dimforge/rapier3d-compat';
-import { BODY, SUSPENSION_REST, type WheelLayout } from '../physics/layout';
+import { BODY } from '../physics/layout';
 import { FlightComputer, type FlightAssists, type FlightThruster } from '../physics/flightComputer';
 import {
   add,
@@ -37,33 +37,12 @@ import {
   type SuctionRuntime,
   type ThrustResult,
 } from './forces';
-import {
-  HISTORY_RATE,
-  HISTORY_SECONDS,
-  RECORDER_RATE,
-  RECORDER_SECONDS,
-  Ring,
-  type CarSnapshot,
-  type HistorySample,
-} from './recorder';
-import {
-  CURLS,
-  PARKED_CARS,
-  PARKED_CAR_BOXES,
-  SPAWNS,
-  TILT_RIG,
-  TUBE,
-  curlSurface,
-  tubeSurface,
-  type Spawn,
-  type SpawnId,
-} from './track';
+import { RAMP, SPAWNS, curlSurface, type Spawn, type SpawnId } from './track';
 import { NO_INPUT, emptyTelemetry, type DriveInput, type Telemetry } from './types';
 import { createWheels, readPose, rv, stepWheels, type Pose, type WheelRuntime } from './vehicle';
 
 export const FIXED_DT = 1 / 120;
 const MAX_STEPS_PER_FRAME = 12;
-const TILT_RATE = (25 * Math.PI) / 180;
 
 export interface StepInfo {
   pose: Pose;
@@ -93,7 +72,6 @@ export class Sim {
   readonly chassis: RAPIER.Collider[] = [];
   readonly labels = new Map<number, string>();
   readonly platforms = new Map<string, RAPIER.RigidBody>();
-  private tiltBody: RAPIER.RigidBody;
 
   params!: VehicleParams;
   nozzles: NozzleRuntime[] = [];
@@ -109,9 +87,6 @@ export class Sim {
   /** Launch control: fire the rear thrusters automatically until this speed (m/s). */
   autoThrustUntil: number | null = null;
   holdBrake = false;
-
-  tiltAngle = 0;
-  tiltTarget = 0;
 
   time = 0;
   stepIndex = 0;
@@ -136,8 +111,6 @@ export class Sim {
   private prevPose: { pos: V3; rot: Quat } | null = null;
 
   readonly telemetry: Telemetry = emptyTelemetry();
-  readonly recorder = new Ring<CarSnapshot>(RECORDER_SECONDS * RECORDER_RATE);
-  readonly history = new Ring<HistorySample>(HISTORY_SECONDS * HISTORY_RATE);
   readonly listeners = new Set<StepListener>();
   lastInfo: StepInfo | null = null;
 
@@ -152,47 +125,11 @@ export class Sim {
     );
     this.labels.set(ground.handle, 'ground');
 
-    for (const c of Object.values(CURLS)) {
-      const m = curlSurface(c);
-      const col = this.world.createCollider(
-        R.ColliderDesc.trimesh(m.positions, m.indices).setFriction(1),
-      );
-      this.labels.set(col.handle, c.id);
-    }
-    const tube = tubeSurface(TUBE);
-    const tubeCol = this.world.createCollider(
-      R.ColliderDesc.trimesh(tube.positions, tube.indices).setFriction(1),
+    const m = curlSurface(RAMP);
+    const ramp = this.world.createCollider(
+      R.ColliderDesc.trimesh(m.positions, m.indices).setFriction(1),
     );
-    this.labels.set(tubeCol.handle, 'tube');
-
-    for (const car of PARKED_CARS) {
-      const q = quatFromAxisAngle([0, 1, 0], car.yaw);
-      for (const b of PARKED_CAR_BOXES) {
-        const off = rotate(q, b.offset);
-        const col = this.world.createCollider(
-          R.ColliderDesc.cuboid(...b.half)
-            .setTranslation(car.center[0] + off[0], car.center[1] + off[1], car.center[2] + off[2])
-            .setRotation({ x: q[0], y: q[1], z: q[2], w: q[3] }),
-        );
-        this.labels.set(col.handle, 'parked-car');
-      }
-    }
-
-    this.tiltBody = this.world.createRigidBody(
-      R.RigidBodyDesc.kinematicPositionBased().setTranslation(
-        TILT_RIG.x,
-        TILT_RIG.axleHeight,
-        TILT_RIG.z,
-      ),
-    );
-    const slab = this.world.createCollider(
-      R.ColliderDesc.cuboid(TILT_RIG.width / 2, TILT_RIG.thickness / 2, TILT_RIG.length / 2)
-        .setTranslation(0, -TILT_RIG.thickness / 2, 0)
-        .setFriction(1),
-      this.tiltBody,
-    );
-    this.labels.set(slab.handle, 'tilt-rig');
-    this.platforms.set('tilt-rig', this.tiltBody);
+    this.labels.set(ramp.handle, 'curl');
 
     this.body = this.world.createRigidBody(
       R.RigidBodyDesc.dynamic()
@@ -219,7 +156,7 @@ export class Sim {
     this.chassis.push(hull, cabin);
 
     this.setVehicle(trim, whatIf);
-    this.reset('hub');
+    this.reset('start');
   }
 
   /** Rebuild the vehicle for a trim / what-if set. Refills the tank. */
@@ -273,14 +210,7 @@ export class Sim {
     this.autoThrustUntil = null;
     this.holdBrake = false;
     this.input = { ...NO_INPUT };
-    this.recorder.clear();
-    this.history.clear();
     this.prevPose = null;
-    if (typeof spawn === 'string' && spawn === 'tilt') {
-      this.tiltAngle = 0;
-      this.tiltTarget = 0;
-      this.tiltBody.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
-    }
     this.updateTelemetry();
   }
 
@@ -390,14 +320,6 @@ export class Sim {
     this.tank = stepThrusters(ctx, this.nozzles, this.tank, this.thrust);
     applyDrag(ctx);
 
-    // Tilt rig.
-    const dTilt = this.tiltTarget - this.tiltAngle;
-    if (Math.abs(dTilt) > 1e-6) {
-      this.tiltAngle += Math.sign(dTilt) * Math.min(Math.abs(dTilt), TILT_RATE * dt);
-      const q = quatFromAxisAngle([0, 0, 1], this.tiltAngle);
-      this.tiltBody.setNextKinematicRotation({ x: q[0], y: q[1], z: q[2], w: q[3] });
-    }
-
     this.world.step();
     this.time += dt;
     this.stepIndex++;
@@ -416,9 +338,6 @@ export class Sim {
       this.gFiltered[1] + (specific[1] - this.gFiltered[1]) * k,
       this.gFiltered[2] + (specific[2] - this.gFiltered[2]) * k,
     ];
-
-    if (this.stepIndex % (120 / RECORDER_RATE) === 0) this.recorder.push(this.snapshot());
-    if (this.stepIndex % (120 / HISTORY_RATE) === 0) this.pushHistory();
 
     if (this.listeners.size > 0) {
       const info: StepInfo = {
@@ -504,79 +423,6 @@ export class Sim {
       });
     }
     return out;
-  }
-
-  snapshot(): CarSnapshot {
-    const pose = readPose(this.body);
-    return {
-      time: this.time,
-      stepIndex: this.stepIndex,
-      pos: pose.pos,
-      rot: pose.rot,
-      linvel: pose.linvel,
-      angvel: pose.angvel,
-      tank: this.tank ? { ...this.tank } : null,
-      suction: { ...this.suction.state },
-      steer: this.steer.value,
-      compressions: this.wheels.map((w) => w.compression),
-      flight: this.fc.snapshot(),
-      tiltAngle: this.tiltAngle,
-      airborneTime: this.airborneTime,
-    };
-  }
-
-  /** Restore a snapshot. With `truncate`, everything recorded after it is forgotten. */
-  restore(s: CarSnapshot, truncate = true): void {
-    this.body.setTranslation(rv(s.pos), true);
-    this.body.setRotation({ x: s.rot[0], y: s.rot[1], z: s.rot[2], w: s.rot[3] }, true);
-    this.body.setLinvel(rv(s.linvel), true);
-    this.body.setAngvel(rv(s.angvel), true);
-    this.tank = s.tank ? { ...s.tank } : null;
-    this.suction.state = { ...s.suction };
-    this.steer.value = s.steer;
-    this.wheels.forEach((w, i) => {
-      w.compression = s.compressions[i] ?? 0;
-      w.prevCompression = w.compression;
-    });
-    this.fc.restore(s.flight);
-    this.tiltAngle = s.tiltAngle;
-    this.tiltTarget = s.tiltAngle;
-    const q = quatFromAxisAngle([0, 0, 1], s.tiltAngle);
-    this.tiltBody.setRotation({ x: q[0], y: q[1], z: q[2], w: q[3] }, true);
-    this.airborneTime = s.airborneTime;
-    this.time = s.time;
-    this.stepIndex = s.stepIndex;
-    this.lastVel = s.linvel;
-    this.prevPose = null;
-    this.updateMass();
-    if (truncate) this.forgetAfter(s.time);
-    this.updateTelemetry();
-  }
-
-  /** Drop recorder/history entries newer than `time`. */
-  forgetAfter(time: number): void {
-    let idx = -1;
-    for (let i = 0; i < this.recorder.size; i++) if (this.recorder.at(i)!.time <= time) idx = i;
-    this.recorder.truncateAfter(idx);
-    let h = -1;
-    for (let i = 0; i < this.history.size; i++) if (this.history.at(i)!.t <= time) h = i;
-    this.history.truncateAfter(h);
-  }
-
-  private pushHistory(): void {
-    const t = this.telemetry;
-    this.history.push({
-      t: this.time,
-      pressure: this.tank?.pressure ?? 0,
-      temperature: this.tank?.temperature ?? this.params.env.ambientTemperature,
-      mass: this.tank?.mass ?? 0,
-      thrust: this.thrust.rear + this.thrust.lift + this.thrust.yaw,
-      downforce: this.suction.out?.downforce ?? 0,
-      deltaP: this.suction.out?.deltaP ?? 0,
-      speed: length(t.velocity),
-      g: Math.hypot(...this.gFiltered) / this.params.env.gravity,
-      fanPower: this.suction.out?.power ?? 0,
-    });
   }
 
   /** Refresh the telemetry object in place (cheap; called once per frame). */
@@ -676,11 +522,6 @@ export class Sim {
     t.rollProgress = this.rollProgress;
     t.upright = toBody(pose.rot, [0, 1, 0])[1];
     t.surface = this.lastWheel.surface || (t.airborne ? 'air' : 'ground');
-  }
-
-  /** Wheel centre height in the body frame for rendering (suspension travel). */
-  wheelCentreY(w: WheelLayout, compression: number): number {
-    return w.anchor[1] - (SUSPENSION_REST - compression);
   }
 
   dispose(): void {

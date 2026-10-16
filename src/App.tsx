@@ -1,31 +1,19 @@
-/** App shell: landing, drive, tour; the 3D scene and heavy panels are code-split. */
+/** App shell: the 3D scene (code-split), the minimal overlay and the "How it works" reader. */
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { host } from './app/host';
-import { announce } from './app/captions';
-import { director } from './scene/cameras/director';
+import { attachKeyboard } from './app/input';
 import { useApp } from './state/store';
-import { ChallengeOverlay } from './ui/challenges/ChallengeUI';
-import { Dock } from './ui/challenges/Dock';
-import { ControlsHelp, TouchControls } from './ui/controls/ControlsUI';
-import { isTouchDevice, useFirstPlayControls } from './ui/controls/firstPlay';
-import { attachKeyboard } from './ui/controls/input';
-import { onAction } from './app/actions';
-import { Hud, HudMini } from './ui/hud/Hud';
-import { Settings } from './ui/Settings';
-import { TopBar } from './ui/TopBar';
-import { Landing } from './ui/Landing';
-import { HOW_IT_WORKS } from './app/links';
+import { Overlay } from './ui/Overlay';
 
 const Experience = lazy(() => import('./scene/Experience'));
-const Lab = lazy(() => import('./ui/lab/Lab'));
-const SpecsModal = lazy(() => import('./ui/lab/SpecsModal'));
-const Tour = lazy(() => import('./ui/tour/Tour'));
+const ArticleOverlay = lazy(() => import('./ui/ArticleOverlay'));
 const AudioBridge = lazy(() => import('./audio/AudioBridge'));
+
+const ARTICLE_URL = `${import.meta.env.BASE_URL}how-it-works/`;
 
 function hasWebGL2(): boolean {
   try {
-    const c = document.createElement('canvas');
-    return !!c.getContext('webgl2');
+    return !!document.createElement('canvas').getContext('webgl2');
   } catch {
     return false;
   }
@@ -34,144 +22,54 @@ function hasWebGL2(): boolean {
 function NoWebGL() {
   return (
     <main className="nowebgl">
-      <h1>Flying Tesla</h1>
-      <p className="muted">
-        Unofficial educational simulation. Not affiliated with Tesla or SpaceX.
+      <h1>Tesla Roadster Simulator</h1>
+      <p className="muted">Unofficial fan project. Not affiliated with Tesla.</p>
+      <p>
+        Your browser can’t run the 3D simulator because WebGL 2 isn’t available. You can still read
+        how it works.
       </p>
       <p>
-        Your browser can’t run the 3D simulation: WebGL 2 isn’t available. You can still read the
-        full explanation, with diagrams and every sourced number.
-      </p>
-      <p>
-        <a className="btn btn--primary" href={HOW_IT_WORKS}>
-          Read how it works
+        <a className="primary" href={ARTICLE_URL}>
+          How it works
         </a>
       </p>
     </main>
   );
 }
 
-function DriveUI() {
-  const labOpen = useApp((s) => s.labOpen);
-  const [showHelp, closeHelp] = useFirstPlayControls(true);
-  const [touch] = useState(isTouchDevice);
-  const [portraitOk, setPortraitOk] = useState(false);
-  return (
-    <>
-      <Dock />
-      <Hud />
-      <HudMini />
-      <ChallengeOverlay />
-      {labOpen && (
-        <Suspense fallback={null}>
-          <Lab />
-        </Suspense>
-      )}
-      {touch && <TouchControls />}
-      {showHelp && <ControlsHelp onClose={closeHelp} />}
-      {!portraitOk && (
-        <div className="rotate-hint is-driving" role="note">
-          <div>
-            <p>Turn your phone sideways for the best view.</p>
-            <button type="button" className="btn" onClick={() => setPortraitOk(true)}>
-              Continue in portrait
-            </button>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
-function Captions() {
-  const caption = useApp((s) => s.caption);
-  return (
-    <div className="sr-only" aria-live="polite" role="status">
-      {caption}
-    </div>
-  );
-}
-
-function VisibleCaption() {
-  const caption = useApp((s) => s.caption);
-  const hideUi = useApp((s) => s.hideUi);
-  if (!caption || hideUi) return null;
-  return (
-    <div className="panel caption" aria-hidden="true">
-      {caption}
-    </div>
-  );
-}
-
 export function App() {
   const [webgl] = useState(hasWebGL2);
-  const mode = useApp((s) => s.mode);
-  const specsOpen = useApp((s) => s.specsOpen);
-  const settingsOpen = useApp((s) => s.settingsOpen);
+  const articleOpen = useApp((s) => s.articleOpen);
   const set = useApp((s) => s.set);
-  const hideUi = useApp((s) => s.hideUi);
 
-  useEffect(() => attachKeyboard(onAction), []);
+  useEffect(() => attachKeyboard(host.onAction, () => !useApp.getState().articleOpen), []);
 
-  // Start loading the 3D scene immediately, then the physics WASM once the first frame is up.
   useEffect(() => {
     if (!webgl) return;
-    set({ load: { stage: 'scene', progress: 0.15, label: 'Loading the 3D scene…' } });
+    set({ load: { stage: 'scene', progress: 0.2, label: 'Loading' } });
     const onFirst = () => {
       host
         .load((p, label) =>
-          set({ load: { stage: p >= 1 ? 'ready' : 'physics', progress: 0.45 + 0.55 * p, label } }),
+          set({ load: { stage: p >= 1 ? 'ready' : 'physics', progress: 0.4 + 0.6 * p, label } }),
         )
-        .catch((e: unknown) =>
-          set({
-            load: {
-              stage: 'error',
-              progress: 0,
-              label: 'Physics failed to load',
-              error: String(e),
-            },
-          }),
-        );
+        .catch(() => set({ load: { stage: 'error', progress: 0, label: 'Error' } }));
     };
-    window.addEventListener('flying-tesla:first-frame', onFirst, { once: true });
-    return () => window.removeEventListener('flying-tesla:first-frame', onFirst);
+    window.addEventListener('trs:first-frame', onFirst, { once: true });
+    return () => window.removeEventListener('trs:first-frame', onFirst);
   }, [webgl, set]);
 
-  // Landing hero camera.
-  useEffect(() => {
-    director.shot =
-      mode === 'landing'
-        ? { kind: 'orbit', radius: 8.5, height: 1.5, speed: 0.07, fov: 38, lookShift: 2.4 }
-        : mode === 'drive'
-          ? null
-          : director.shot;
-    director.cut = true;
-    if (mode === 'drive') announce('Drive mode. Controls are in the top bar.', 2000);
-  }, [mode]);
-
   if (!webgl) return <NoWebGL />;
-
   return (
     <>
       <Suspense fallback={null}>
         <Experience />
       </Suspense>
-      {!hideUi && <TopBar />}
-      {mode === 'landing' && <Landing />}
-      {mode === 'drive' && !hideUi && <DriveUI />}
-      {mode === 'tour' && (
+      <Overlay />
+      {articleOpen && (
         <Suspense fallback={null}>
-          <Tour />
+          <ArticleOverlay />
         </Suspense>
       )}
-      {specsOpen && (
-        <Suspense fallback={null}>
-          <SpecsModal />
-        </Suspense>
-      )}
-      {settingsOpen && <Settings />}
-      <VisibleCaption />
-      <Captions />
       <Suspense fallback={null}>
         <AudioBridge />
       </Suspense>

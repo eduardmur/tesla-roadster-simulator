@@ -1,0 +1,85 @@
+/* "How it works": a plain, narrow reading column. */
+.article {
+  max-width: 660px;
+  margin: 0 auto;
+  padding: 72px 20px 96px;
+  font:
+    18px/1.65 system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+  color: #171a20;
+}
+.article h1 {
+  font-size: 2.2rem;
+  line-height: 1.15;
+  font-weight: 600;
+  margin: 0 0 18px;
+  letter-spacing: -0.01em;
+}
+.article h2 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin: 48px 0 10px;
+}
+.article p,
+.article ol {
+  margin: 0 0 16px;
+}
+.article li {
+  margin: 0 0 8px;
+}
+.article .lede {
+  font-size: 1.1rem;
+}
+.article a {
+  color: inherit;
+  text-decoration-color: #b5b7ba;
+  text-underline-offset: 3px;
+}
+.article sup a {
+  text-decoration: none;
+  color: #5c5e62;
+  font-size: 0.75em;
+  padding-left: 1px;
+}
+.article figure {
+  margin: 28px 0;
+}
+.article svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  font:
+    13px system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  fill: #171a20;
+}
+.article figcaption {
+  font-size: 0.85rem;
+  color: #5c5e62;
+  margin-top: 8px;
+}
+.article .sources {
+  font-size: 0.9rem;
+  color: #393c41;
+}
+.article .fine {
+  margin-top: 40px;
+  font-size: 0.8rem;
+  color: #8e8e8e;
+}
+.article .back {
+  font-size: 0.9rem;
+  margin-bottom: 32px;
+}
+:focus-visible {
+  outline: 2px solid #3e6ae1;
+  outline-offset: 2px;
+}

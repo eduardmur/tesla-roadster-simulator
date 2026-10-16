@@ -1,150 +1,152 @@
 /**
- * Cameras: chase, cinematic orbit, on-board and engineer cutaway, plus "shots" the tour and
- * landing page put on rails. Gentle thrust shake, disabled with prefers-reduced-motion.
+ * Cameras. The autopilot run cuts between fixed "film" shots like the reveal footage;
+ * driving yourself uses a chase camera. A director override exists for scripted captures.
  */
 import { useFrame, useThree } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { host } from '../../app/host';
 import { useApp } from '../../state/store';
-import { director, type CameraShot } from './director';
+import { director } from './director';
+
+type ShotId = 'idle' | 'approach' | 'side' | 'flight' | 'landing' | 'done' | 'chase';
 
 const WORLD_UP = new THREE.Vector3(0, 1, 0);
 
 export function CameraRig({ carRef }: { carRef: React.RefObject<THREE.Group | null> }) {
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
-  const mode = useApp((s) => s.camera);
-  const xray = useApp((s) => s.xray);
-  const reducedMotion = useApp((s) => s.reducedMotion);
   const v = useMemo(
     () => ({
       pos: new THREE.Vector3(),
       look: new THREE.Vector3(),
+      smoothLook: new THREE.Vector3(),
       up: new THREE.Vector3(0, 1, 0),
       fwd: new THREE.Vector3(),
       carUp: new THREE.Vector3(),
-      left: new THREE.Vector3(),
-      tmp: new THREE.Vector3(),
       q: new THREE.Quaternion(),
-      smoothLook: new THREE.Vector3(),
+      anchor: new THREE.Vector3(),
       init: false,
     }),
     [],
   );
-  const orbitAngle = useRef(0.8);
+  const shotRef = useRef<ShotId | null>(null);
+  const orbit = useRef(0);
 
   useFrame((state, rawDt) => {
     const car = carRef.current;
     if (!car) return;
     const dt = Math.min(rawDt, 0.05);
+    const app = useApp.getState();
     const t = host.sim?.telemetry;
     car.getWorldQuaternion(v.q);
     v.fwd.set(0, 0, 1).applyQuaternion(v.q);
     v.carUp.set(0, 1, 0).applyQuaternion(v.q);
-    v.left.set(1, 0, 0).applyQuaternion(v.q);
-    const carPos = car.position;
-    const shot: CameraShot =
-      director.shot ??
-      (mode === 'chase'
-        ? { kind: 'chase' }
-        : mode === 'orbit'
-          ? { kind: 'orbit', radius: xray ? 6.4 : 9, height: xray ? 2.2 : 2.6, speed: 0.18 }
-          : mode === 'onboard'
-            ? { kind: 'carFrame', offset: [0.4, 0.42, 0.0], look: [0.4, 0.38, 10], fov: 72 }
-            : { kind: 'carFrame', offset: [14, 1.2, 0], look: [0, 0, 0], fov: 24 });
+    const p = car.position;
 
-    let fov = 52;
-    let stiffness = reducedMotion ? 3 : 6;
+    // Pick the shot.
+    let shot: ShotId;
+    if (app.mode === 'manual') shot = 'chase';
+    else if (app.mode === 'done') shot = 'done';
+    else if (app.mode === 'idle') shot = 'idle';
+    else if (app.stage === 'flight')
+      shot = t && t.altitude < 6 && t.velocity[1] < 0 ? 'landing' : 'flight';
+    else if (app.stage === 'climb' || app.stage === 'inverted') shot = 'side';
+    else shot = 'approach';
+    const cut = shot !== shotRef.current;
+    if (cut) {
+      shotRef.current = shot;
+      // Low on the runway, between the lamp rows, looking back at the car.
+      if (shot === 'landing') v.anchor.set(p.x + 4.5, 1.1, p.z - 13);
+      if (shot === 'done')
+        orbit.current = Math.atan2(camera.position.z - p.z, camera.position.x - p.x);
+    }
+
+    let fov = 45;
+    let stiffness = 4;
     let targetUp = WORLD_UP;
-    const onSurface = (t?.wheelsInContact ?? 4) >= 2;
-
-    switch (shot.kind) {
+    switch (shot) {
+      case 'idle': {
+        // Low behind the car, the ramp towering ahead (pulled back on tall, narrow screens).
+        const narrow = state.size.width < state.size.height;
+        v.pos.set(p.x - (narrow ? 0.6 : 1.8), narrow ? 1.6 : 1.0, p.z - (narrow ? 11 : 7.5));
+        v.look.set(0, narrow ? 6 : 4.5, p.z + 14);
+        fov = narrow ? 62 : 50;
+        break;
+      }
+      case 'approach':
+        v.pos.set(p.x - 1.2, 1.2, p.z - 8);
+        v.look.set(p.x, 3, p.z + 12);
+        fov = 50;
+        stiffness = 6;
+        break;
+      case 'side':
+        v.pos.set(26, 7, -9);
+        v.look.copy(p);
+        fov = 48;
+        break;
+      case 'flight':
+        v.pos.set(24, 6, -22);
+        v.look.copy(p);
+        fov = 46;
+        break;
+      case 'landing':
+        v.pos.copy(v.anchor);
+        v.look.copy(p);
+        fov = 42;
+        break;
+      case 'done': {
+        if (!app.reducedMotion) orbit.current += dt * 0.12;
+        const a = orbit.current;
+        v.pos.set(p.x + Math.cos(a) * 9, p.y + 1.8, p.z + Math.sin(a) * 9);
+        v.look.set(p.x, p.y + 0.3, p.z);
+        fov = 40;
+        stiffness = 2;
+        break;
+      }
       case 'chase': {
-        const up = onSurface && !reducedMotion ? v.carUp : WORLD_UP;
+        const onSurface = (t?.wheelsInContact ?? 4) >= 2;
+        const up = onSurface && !app.reducedMotion ? v.carUp : WORLD_UP;
         targetUp = up;
-        // Behind the car along its own forward axis.
-        v.pos.copy(carPos).addScaledVector(v.fwd, -6.8).addScaledVector(up, 2.1);
-        v.look.copy(carPos).addScaledVector(up, 0.7).addScaledVector(v.fwd, 2.5);
+        v.pos.copy(p).addScaledVector(v.fwd, -6.8).addScaledVector(up, 2.0);
+        v.look.copy(p).addScaledVector(up, 0.7).addScaledVector(v.fwd, 2.5);
         fov = 55;
-        break;
-      }
-      case 'orbit': {
-        orbitAngle.current += dt * shot.speed * (reducedMotion ? 0.4 : 1);
-        const a = orbitAngle.current;
-        v.pos.set(
-          carPos.x + Math.cos(a) * shot.radius,
-          carPos.y + shot.height,
-          carPos.z + Math.sin(a) * shot.radius,
-        );
-        v.look.copy(carPos).add(v.tmp.set(0, 0.35, 0));
-        if (shot.lookShift) {
-          // Camera-right in world space; look a little left of the car so it sits right of centre.
-          v.tmp.copy(v.look).sub(v.pos).cross(WORLD_UP).normalize();
-          const aspect = state.size.width / Math.max(state.size.height, 1);
-          v.look.addScaledVector(
-            v.tmp,
-            -shot.lookShift * Math.min(1, Math.max(0, (aspect - 1) / 0.8)),
-          );
-        }
-        fov = shot.fov ?? 42;
-        stiffness = 3;
-        break;
-      }
-      case 'carFrame': {
-        const up = mode === 'onboard' && !director.shot ? v.carUp : WORLD_UP;
-        targetUp = up;
-        v.pos
-          .copy(carPos)
-          .addScaledVector(v.left, shot.offset[0])
-          .addScaledVector(
-            mode === 'onboard' && !director.shot ? v.carUp : WORLD_UP,
-            shot.offset[1],
-          )
-          .addScaledVector(v.fwd, shot.offset[2]);
-        v.look
-          .copy(carPos)
-          .addScaledVector(v.left, shot.look[0])
-          .addScaledVector(v.carUp, shot.look[1])
-          .addScaledVector(v.fwd, shot.look[2]);
-        fov = shot.fov ?? 50;
-        stiffness = mode === 'onboard' && !director.shot ? 40 : 5;
-        break;
-      }
-      case 'world': {
-        v.pos.set(...shot.position);
-        if (shot.lookAt === 'car') v.look.copy(carPos);
-        else v.look.set(...shot.lookAt);
-        fov = shot.fov ?? 45;
-        stiffness = 2.5;
+        stiffness = 6;
         break;
       }
     }
 
-    // Shake from thrust (off for reduced motion).
-    if (!reducedMotion && t) {
-      const thrust = t.rearThrust + t.liftThrust;
-      const amp = Math.min(thrust / 80_000, 1.2) * 0.05;
+    // Scripted captures can override the shot.
+    const s = director.shot;
+    if (s) {
+      v.pos.set(...s.position);
+      if (s.lookAt === 'car') v.look.copy(p);
+      else v.look.set(...s.lookAt);
+      fov = s.fov ?? fov;
+    }
+
+    // Gentle shake with thrust (never with reduced motion).
+    if (!app.reducedMotion && t) {
+      const amp = Math.min((t.rearThrust + t.liftThrust) / 80_000, 1.2) * 0.04;
       if (amp > 0.001) {
         const time = state.clock.elapsedTime;
         v.pos.x += Math.sin(time * 47) * amp;
         v.pos.y += Math.sin(time * 61 + 1) * amp;
-        v.pos.z += Math.sin(time * 53 + 2) * amp;
       }
     }
 
-    const k = director.cut || !v.init ? 1 : 1 - Math.exp(-stiffness * dt);
+    const hard = cut || director.cut || !v.init;
     director.cut = false;
+    const k = hard ? 1 : 1 - Math.exp(-stiffness * dt);
     camera.position.lerp(v.pos, k);
-    v.smoothLook.lerp(v.look, v.init ? Math.min(1, k * 1.6) : 1);
-    v.up.lerp(targetUp, 1 - Math.exp(-(reducedMotion ? 1.5 : 3) * dt)).normalize();
+    v.smoothLook.lerp(v.look, hard ? 1 : Math.min(1, k * 1.8));
+    v.up.lerp(targetUp, hard ? 1 : 1 - Math.exp(-3 * dt)).normalize();
     camera.up.copy(v.up);
     camera.lookAt(v.smoothLook);
     if (Math.abs(camera.fov - fov) > 0.05) {
-      camera.fov += (fov - camera.fov) * Math.min(1, dt * 4);
+      camera.fov = hard ? fov : camera.fov + (fov - camera.fov) * Math.min(1, dt * 4);
       camera.updateProjectionMatrix();
     }
     v.init = true;
-    // Priority 0: runs after the car pose (−1) without taking over rendering.
   }, 0);
 
   return null;

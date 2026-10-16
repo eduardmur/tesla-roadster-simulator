@@ -43,7 +43,7 @@ export function curlSpeeds(curl: CurlSpec): { entry: number; climb: number } {
 export function applyRampAssist(input: DriveInput, t: Telemetry, curl: CurlSpec): DriveInput {
   if (t.airborne || input.throttle <= 0) return input;
   const s = curlSpeeds(curl);
-  const ctl = speedControl(t.forwardSpeed, t.surface === curl.id ? s.climb : s.entry);
+  const ctl = speedControl(t.forwardSpeed, t.surface === 'curl' ? s.climb : s.entry);
   return {
     ...input,
     throttle: Math.min(input.throttle, ctl.throttle),
@@ -72,7 +72,7 @@ export function createCurlAutopilot(curl: CurlSpec): CurlAutopilot {
     phase: 'approach',
     input(t) {
       const out: DriveInput = { ...NO_INPUT };
-      const onCurl = t.surface === curl.id;
+      const onCurl = t.surface === 'curl';
       if (ap.phase === 'approach' && onCurl) ap.phase = 'climb';
       if ((ap.phase === 'climb' || ap.phase === 'approach') && t.airborne && t.position[1] > 2) {
         ap.phase = 'flight';

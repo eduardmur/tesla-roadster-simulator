@@ -1,17 +1,18 @@
-# Contributing to Flying Tesla
+# Contributing to Tesla Roadster Simulator
 
 Thanks for helping! Bug fixes, better physics, accessibility improvements and spec corrections are
 all welcome.
 
 ## Ground rules
 
-- **No invented numbers.** Every number the product shows must come from
+- **Keep it minimal.** The simulator does one thing: the upside-down ramp jump. Please discuss
+  new features in an issue before building them.
+- **No invented numbers.** Every number the article shows must come from
   [`src/data/specs.ts`](src/data/specs.ts), tagged `confirmed`, `reported` or `estimate`, with a
-  source for anything reported. Values derived from those go through the physics module and are
-  shown with a `sim` tag.
+  source for anything reported. Values derived from those go through the physics module.
 - **No Tesla or SpaceX branding.** No logos, wordmarks, badges or copied design details. The car is
-  an original procedural model. Always keep the "Unofficial educational simulation. Not affiliated
-  with Tesla or SpaceX." line next to the name.
+  an original procedural model. Always keep the "Unofficial fan project. Not affiliated with
+  Tesla." line next to the name.
 - **Assets**: CC0 only, credited in [`CREDITS.md`](CREDITS.md).
 - **No trackers or analytics.**
 - English for UI, copy, code comments and docs.
@@ -20,7 +21,7 @@ all welcome.
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173/flying-tesla/
+npm run dev          # http://localhost:5173/tesla-roadster-simulator/
 npm test             # physics + headless sim tests (Vitest)
 npm run typecheck
 npm run lint
@@ -32,11 +33,12 @@ npm run build && npm run e2e   # Playwright smoke test against the build
 
 ```
 src/physics/   pure, deterministic physics (no rendering imports), fully unit-tested
-src/sim/       Rapier world, raycast vehicle, forces, recorder, autopilot, challenges
-src/scene/     three.js / react-three-fiber: car, environment, effects, cameras
-src/ui/        HUD, lab panels, tour, challenges, controls
-src/data/      specs.ts (every number), sources.ts, tour.ts, components.ts
-scripts/       build-time generator for the /how-it-works page
+src/sim/       Rapier world, raycast vehicle, forces, the ramp, autopilot, jump monitor
+src/scene/     three.js / react-three-fiber: car, ramp, night scene, exhaust, cameras
+src/ui/        the overlay and the article reader
+src/article/   the "How it works" article and its diagrams
+src/data/      specs.ts (every number), sources.ts
+scripts/       the static /how-it-works page and the README/OG media capture
 docs/          PHYSICS.md, SOURCES.md, DECISIONS.md
 ```
 
@@ -52,7 +54,7 @@ validation tests are the contract with the reported numbers.
 - Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`,
   `chore:`…).
 - CI must be green: typecheck, lint, format check, unit tests and build.
-- For visual changes, attach a screenshot (`H` hides the UI).
+- For visual changes, attach a screenshot.
 
 By contributing you agree that code is licensed under MIT and written explainer content under
 CC BY 4.0, as described in the README.

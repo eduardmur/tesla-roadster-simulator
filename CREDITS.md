@@ -2,16 +2,17 @@
 
 ## Assets
 
-All of Flying Tesla's visuals and sounds are original and generated in code. There are no
+All of the simulator's visuals and sounds are original and generated in code. There are no
 downloaded 3D models, textures, HDRIs, fonts or audio files.
 
-- **Car**: built procedurally from extrusions and lathes in `src/scene/car/`. It is an original
-  low wedge coupe with no Tesla logos, wordmarks, badges or copied design details.
-- **Sky, ground, desert and reflections**: shaders and in-scene light panels (`src/scene/environment/`).
-- **Carbon-fibre texture**: drawn on a canvas at runtime.
+- **Car**: a body lofted from cross-sections in `src/scene/car/body.ts`. It is an original low
+  coupe shape with no Tesla logos, wordmarks, badges or copied design details.
+- **Ramp, night sky, ground, lights and reflections**: shaders, simple geometry and in-scene light
+  panels (`src/scene/environment/`).
 - **Sound**: synthesised with the Web Audio API (`src/audio/engine.ts`): filtered noise for the gas
-  hiss and tire squeal, oscillators for the fan whine and motor.
-- **Fonts**: your system's UI and monospace fonts.
+  hiss and a low rumble. No tones, so nothing whines.
+- **Fonts**: your system's UI font.
+- **Diagrams in "How it works"**: hand-written SVG and CSS in `src/article/article.ts`.
 
 If a future contribution adds an HDRI or texture, it must be CC0 (e.g. from Poly Haven) and be
 credited here.

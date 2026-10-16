@@ -11,6 +11,11 @@ calibration) or **confirmed** (a textbook constant). The validation tests in
 The physics module is pure TypeScript. It has no rendering imports, it is deterministic, and the
 3D simulation steps it at a fixed 120 Hz.
 
+The simulator itself shows one thing: the Rocket trim doing the upside-down ramp jump. The physics
+module still models all three trims, the 0–60 launch, Moon and Mars, and the 10,000 psi figure,
+because the validation tests check it against every reported number. For a shorter, illustrated
+explanation, see "How it works" in the app.
+
 ---
 
 ## 1. Why tires limit acceleration
@@ -142,8 +147,8 @@ Moon there is no air, so there is no suction at all.
 The Rocket carries **600 L** of air in two composite-overwrapped pressure vessels (COPVs):
 200 L behind the seats and 400 L in place of the passenger seat. Together they hold **about
 250 kg** of air (all reported). The Thrust trim has only the 200 L tank. An in-car screen
-showed **5,500 psi** (≈ 379 bar, reported). Older Musk statements said ~10,000 psi. That
-figure is available as a "what if".
+showed **5,500 psi** (≈ 379 bar, reported), and that is what the simulator uses. Older Musk
+statements said ~10,000 psi.
 
 ### Equation of state
 
@@ -297,8 +302,9 @@ between.
   with the pseudo-inverse of the 3×4 allocation matrix. Nozzles can only push, so a pure
   torque always comes with some net lift. When saturated, the mixer keeps the torque and gives
   up lift. The two yaw nozzles handle yaw.
-- **Hard mode.** Turning the assists off gives you raw lift and leaves auto-levelling to you.
-  The rate damping stays on.
+- **Assists stay on in the simulator.** When you drive yourself, W means "go at a safe speed" on
+  the ramp, and auto-level and the landing assist do the rest. The headless tests also run the
+  jump without the ramp speed assist, which ends in a much harder landing.
 
 ---
 

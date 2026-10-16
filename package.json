@@ -1,8 +1,8 @@
 {
-  "name": "flying-tesla",
+  "name": "tesla-roadster-simulator",
   "private": true,
-  "version": "1.0.0",
-  "description": "Flying Tesla \u2014 an unofficial interactive 3D explainer of the 2026 Tesla Roadster's suction fans and cold-gas thrusters.",
+  "version": "2.0.0",
+  "description": "Tesla Roadster Simulator: an unofficial browser simulation of the 2026 Roadster's upside-down ramp jump, with suction fans and cold-gas thrusters.",
   "license": "MIT",
   "type": "module",
   "engines": {

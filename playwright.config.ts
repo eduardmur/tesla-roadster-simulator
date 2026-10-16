@@ -11,7 +11,7 @@ export default defineConfig({
   reporter: [['list']],
   outputDir: 'test-results',
   use: {
-    baseURL: `http://localhost:${port}/flying-tesla/`,
+    baseURL: `http://localhost:${port}/tesla-roadster-simulator/`,
     viewport: { width: 1280, height: 800 },
     // Software WebGL so the suite runs on CI machines without a GPU.
     launchOptions: {
@@ -25,7 +25,7 @@ export default defineConfig({
   },
   webServer: {
     command: `npx vite preview --configLoader runner --port ${port} --strictPort`,
-    url: `http://localhost:${port}/flying-tesla/`,
+    url: `http://localhost:${port}/tesla-roadster-simulator/`,
     reuseExistingServer: true,
     timeout: 60_000,
   },

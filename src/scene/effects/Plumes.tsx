@@ -10,6 +10,7 @@ import { DOWN_NOZZLES, REAR_NOZZLES, YAW_NOZZLES, type NozzleLayout } from '../.
 import { firstShockDiamondDistance, nozzlePerformance } from '../../physics/nozzle';
 import type { TrimId } from '../../physics/params';
 import type { Sim } from '../../sim/world';
+import { useApp } from '../../state/store';
 import { nozzleVisualPosition } from '../car/nozzles';
 
 const plumeVertex = /* glsl */ `
@@ -189,7 +190,7 @@ export function ExhaustParticles({
         void main() {
           vec2 c = gl_PointCoord - 0.5;
           float d = length(c);
-          float a = smoothstep(0.5, 0.0, d) * vLife * 0.35;
+          float a = smoothstep(0.5, 0.05, d) * vLife * 0.42;
           if (a < 0.003) discard;
           gl_FragColor = vec4(vec3(0.93, 0.92, 0.95), a);
         }
@@ -207,6 +208,8 @@ export function ExhaustParticles({
       vel: new Float32Array(n * 3),
       age: new Float32Array(n),
       maxAge: new Float32Array(n),
+      /** Final size of each puff, m. */
+      big: new Float32Array(n),
       next: 0,
     };
   }, [maxParticles]);
@@ -221,13 +224,15 @@ export function ExhaustParticles({
     const s = sim();
     const car = carGroup.current;
     const t = s?.telemetry;
-    const step = Math.min(dt, 0.05) * (s?.paused ? 0 : (s?.timeScale ?? 1));
+    // Particles keep moving in real time unless the reader is open (also during scripted captures).
+    const step = Math.min(dt, 0.05) * (useApp.getState().articleOpen ? 0 : (s?.timeScale ?? 1));
     let emitted = 0;
     if (car && step > 0) {
       for (const nz of nozzles) {
         const { k } = thrustFraction(s, nz.id);
         if (k <= 0.05) continue;
-        acc.current[nz.id] = (acc.current[nz.id] ?? 0) + 90 * k * step;
+        const lift = !nz.id.startsWith('R');
+        acc.current[nz.id] = (acc.current[nz.id] ?? 0) + (lift ? 160 : 90) * k * step;
         while (acc.current[nz.id]! >= 1 && emitted < 80) {
           acc.current[nz.id]! -= 1;
           emitted++;
@@ -248,7 +253,8 @@ export function ExhaustParticles({
           particles.pos[i * 3 + 1] = tmp.p.y + tmp.d.y * off;
           particles.pos[i * 3 + 2] = tmp.p.z + tmp.d.z * off;
           particles.age[i] = 0;
-          particles.maxAge[i] = 0.5 + Math.random() * 0.7;
+          particles.maxAge[i] = lift ? 1.4 + Math.random() * 1.6 : 0.5 + Math.random() * 0.7;
+          particles.big[i] = lift ? 2.5 + Math.random() * 2.5 : 1.2 + Math.random() * 0.8;
         }
       }
     }
@@ -262,9 +268,17 @@ export function ExhaustParticles({
         particles.life[i] = 0;
         continue;
       }
-      const drag = Math.exp(-step * 3.5);
+      // Puffs that reach the ground spread out sideways and billow up.
+      if (particles.pos[i * 3 + 1]! < 0.4 && particles.vel[i * 3 + 1]! < 0) {
+        const down = -particles.vel[i * 3 + 1]!;
+        const ang = Math.random() * Math.PI * 2;
+        particles.vel[i * 3] = particles.vel[i * 3]! * 0.4 + Math.cos(ang) * down * 0.6;
+        particles.vel[i * 3 + 2] = particles.vel[i * 3 + 2]! * 0.4 + Math.sin(ang) * down * 0.6;
+        particles.vel[i * 3 + 1] = down * 0.08;
+      }
+      const drag = Math.exp(-step * 2.2);
       particles.vel[i * 3] = particles.vel[i * 3]! * drag;
-      particles.vel[i * 3 + 1] = particles.vel[i * 3 + 1]! * drag + 0.6 * step;
+      particles.vel[i * 3 + 1] = particles.vel[i * 3 + 1]! * drag + 0.5 * step;
       particles.vel[i * 3 + 2] = particles.vel[i * 3 + 2]! * drag;
       particles.pos[i * 3] = particles.pos[i * 3]! + particles.vel[i * 3]! * step;
       particles.pos[i * 3 + 1] = Math.max(
@@ -274,7 +288,7 @@ export function ExhaustParticles({
       particles.pos[i * 3 + 2] = particles.pos[i * 3 + 2]! + particles.vel[i * 3 + 2]! * step;
       const r = a / ma;
       particles.life[i] = (1 - r) * Math.min(1, r * 6);
-      particles.size[i] = 0.2 + 1.6 * r;
+      particles.size[i] = 0.25 + particles.big[i]! * Math.sqrt(r);
     }
     const g = particles.pts.geometry;
     (g.attributes.position as THREE.BufferAttribute).needsUpdate = true;
