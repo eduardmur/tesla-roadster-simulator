@@ -41,6 +41,13 @@ function trackErrors(page: Page): string[] {
 
 async function ready(page: Page) {
   await page.goto('./');
+  // If the browser has no WebGL 2 the app shows its text fallback instead; report that clearly.
+  await page.waitForFunction(() => !!document.querySelector('.nowebgl') || !!window.__ft, null, {
+    timeout: 30_000,
+  });
+  if (await page.locator('.nowebgl').count()) {
+    throw new Error('WebGL 2 is unavailable in this browser: the fallback page is shown');
+  }
   await page.waitForFunction(() => window.__ft?.app.getState().load.stage === 'ready', null, {
     timeout: 90_000,
   });

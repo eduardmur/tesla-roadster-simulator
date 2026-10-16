@@ -56,7 +56,9 @@ jobs:
         if: always()
         with:
           name: e2e-screenshots-${{ matrix.browser }}
-          path: artifacts/
+          path: |
+            artifacts/
+            test-results/
           if-no-files-found: ignore
           retention-days: 14
 
