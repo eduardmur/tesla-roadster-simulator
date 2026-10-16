@@ -524,7 +524,8 @@ export class Sim {
     };
   }
 
-  restore(s: CarSnapshot): void {
+  /** Restore a snapshot. With `truncate`, everything recorded after it is forgotten. */
+  restore(s: CarSnapshot, truncate = true): void {
     this.body.setTranslation(rv(s.pos), true);
     this.body.setRotation({ x: s.rot[0], y: s.rot[1], z: s.rot[2], w: s.rot[3] }, true);
     this.body.setLinvel(rv(s.linvel), true);
@@ -547,14 +548,18 @@ export class Sim {
     this.lastVel = s.linvel;
     this.prevPose = null;
     this.updateMass();
-    // Forget the future.
+    if (truncate) this.forgetAfter(s.time);
+    this.updateTelemetry();
+  }
+
+  /** Drop recorder/history entries newer than `time`. */
+  forgetAfter(time: number): void {
     let idx = -1;
-    for (let i = 0; i < this.recorder.size; i++) if (this.recorder.at(i)!.time <= s.time) idx = i;
+    for (let i = 0; i < this.recorder.size; i++) if (this.recorder.at(i)!.time <= time) idx = i;
     this.recorder.truncateAfter(idx);
     let h = -1;
-    for (let i = 0; i < this.history.size; i++) if (this.history.at(i)!.t <= s.time) h = i;
+    for (let i = 0; i < this.history.size; i++) if (this.history.at(i)!.t <= time) h = i;
     this.history.truncateAfter(h);
-    this.updateTelemetry();
   }
 
   private pushHistory(): void {
