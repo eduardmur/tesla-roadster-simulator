@@ -1,11 +1,11 @@
-# Flying Tesla Explained
+# Flying Tesla
 
 > Unofficial educational simulation. Not affiliated with Tesla or SpaceX.
 
 An interactive 3D explainer of how the 2026 Tesla Roadster's underbody suction fans and
 compressed-air (cold-gas) thrusters work — with honest, sourced numbers.
 
-🚧 Work in progress. Live site: https://eduardmur.github.io/flying-tesla-explained/
+🚧 Work in progress. Live site: https://eduardmur.github.io/flying-tesla/
 
 ## Run locally
 

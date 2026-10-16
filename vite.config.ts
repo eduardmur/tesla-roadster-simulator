@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'node:path';
 
 // GitHub Pages serves the site from /<repo>/; override with BASE_PATH for other hosts.
-const base = process.env.BASE_PATH ?? '/flying-tesla-explained/';
+const base = process.env.BASE_PATH ?? '/flying-tesla/';
 
 export default defineConfig({
   base,

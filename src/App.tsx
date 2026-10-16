@@ -20,7 +20,7 @@ export function App() {
         <OrbitControls autoRotate autoRotateSpeed={0.5} />
       </Canvas>
       <div style={{ position: 'absolute', left: 24, top: 24, fontFamily: 'system-ui, sans-serif' }}>
-        <h1 style={{ margin: 0 }}>Flying Tesla Explained</h1>
+        <h1 style={{ margin: 0 }}>Flying Tesla</h1>
         <p style={{ margin: '4px 0' }}>
           Unofficial educational simulation. Not affiliated with Tesla or SpaceX. Work in progress.
         </p>
