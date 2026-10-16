@@ -4,6 +4,7 @@ import { host } from '../../app/host';
 import { SPECS } from '../../data/specs';
 import { PSI, TRIMS, TRIM_LABELS, isReported, type TrimId } from '../../physics/params';
 import { CHALLENGE_INFO, type ChallengeKind } from '../../sim/challenges';
+import type { SpawnId } from '../../sim/track';
 import { useApp } from '../../state/store';
 import { fmt, fmtInt } from '../format';
 import { useHost } from '../hooks';
@@ -89,6 +90,85 @@ function ChallengeList() {
           Watch the autopilot do The Curl
         </button>
       </div>
+    </section>
+  );
+}
+
+const PLACES: { id: SpawnId; label: string }[] = [
+  { id: 'hub', label: 'Test pad centre' },
+  { id: 'drag', label: 'Drag strip' },
+  { id: 'curl', label: 'The Curl run-in' },
+  { id: 'practice', label: 'Practice curl run-in' },
+  { id: 'tube', label: 'Wall & ceiling tube' },
+  { id: 'tilt', label: 'Tilt rig' },
+  { id: 'hop', label: 'Car hop lane' },
+  { id: 'hover', label: 'Hover pad' },
+];
+
+function GoTo() {
+  const [place, setPlace] = useState<SpawnId>('hub');
+  const [tilt, setTilt] = useState(0);
+  return (
+    <section aria-labelledby="go-h">
+      <div className="eyebrow" id="go-h">
+        Go to
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <label className="sr-only" htmlFor="go-select">
+          Place
+        </label>
+        <select
+          id="go-select"
+          value={place}
+          onChange={(e) => setPlace(e.target.value as SpawnId)}
+          style={{
+            flex: 1,
+            minHeight: 36,
+            borderRadius: 8,
+            background: 'var(--panel-2)',
+            border: '1px solid var(--border-strong)',
+            padding: '0 8px',
+          }}
+        >
+          {PLACES.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.label}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className="btn btn--small"
+          onClick={() => {
+            host.stopChallenge();
+            host.respawn(place);
+            setTilt(0);
+          }}
+        >
+          Go
+        </button>
+      </div>
+      {place === 'tilt' && (
+        <div className="slider">
+          <label htmlFor="dock-tilt">
+            <span>Tilt the rig</span>
+            <span className="mono">{tilt}°</span>
+          </label>
+          <input
+            id="dock-tilt"
+            type="range"
+            min={0}
+            max={180}
+            step={5}
+            value={tilt}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              setTilt(v);
+              if (host.sim) host.sim.tiltTarget = (v * Math.PI) / 180;
+            }}
+          />
+        </div>
+      )}
     </section>
   );
 }
@@ -307,8 +387,15 @@ export function Dock() {
   const [tab, setTab] = useState<'drive' | 'whatif'>('drive');
   const labOpen = useApp((s) => s.labOpen);
   const [open, setOpen] = useState<boolean | null>(null);
-  // Collapse automatically while the lab drawer is open (unless the user expanded it).
-  const expanded = open ?? !labOpen;
+  const [small] = useState(() => {
+    try {
+      return window.matchMedia('(max-width: 700px), (max-height: 520px)').matches;
+    } catch {
+      return false;
+    }
+  });
+  // Collapse automatically while the lab drawer is open or on phones (unless the user expanded it).
+  const expanded = open ?? (!labOpen && !small);
   if (!expanded) {
     return (
       <aside className="panel dock dock--collapsed" aria-label="Drive settings">
@@ -359,6 +446,7 @@ export function Dock() {
         <>
           <TrimSelector />
           <ChallengeList />
+          <GoTo />
           <Assists />
         </>
       ) : (

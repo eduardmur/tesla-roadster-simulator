@@ -10,7 +10,7 @@ import { ControlsHelp, TouchControls } from './ui/controls/ControlsUI';
 import { isTouchDevice, useFirstPlayControls } from './ui/controls/firstPlay';
 import { attachKeyboard } from './ui/controls/input';
 import { onAction } from './app/actions';
-import { Hud } from './ui/hud/Hud';
+import { Hud, HudMini } from './ui/hud/Hud';
 import { Settings } from './ui/Settings';
 import { TopBar } from './ui/TopBar';
 import { Landing } from './ui/Landing';
@@ -55,10 +55,12 @@ function DriveUI() {
   const labOpen = useApp((s) => s.labOpen);
   const [showHelp, closeHelp] = useFirstPlayControls(true);
   const [touch] = useState(isTouchDevice);
+  const [portraitOk, setPortraitOk] = useState(false);
   return (
     <>
       <Dock />
       <Hud />
+      <HudMini />
       <ChallengeOverlay />
       {labOpen && (
         <Suspense fallback={null}>
@@ -67,9 +69,16 @@ function DriveUI() {
       )}
       {touch && <TouchControls />}
       {showHelp && <ControlsHelp onClose={closeHelp} />}
-      <div className="rotate-hint is-driving" role="note">
-        <p>Turn your phone sideways for the best view.</p>
-      </div>
+      {!portraitOk && (
+        <div className="rotate-hint is-driving" role="note">
+          <div>
+            <p>Turn your phone sideways for the best view.</p>
+            <button type="button" className="btn" onClick={() => setPortraitOk(true)}>
+              Continue in portrait
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -132,7 +141,7 @@ export function App() {
   useEffect(() => {
     director.shot =
       mode === 'landing'
-        ? { kind: 'orbit', radius: 8.5, height: 1.5, speed: 0.07, fov: 38 }
+        ? { kind: 'orbit', radius: 8.5, height: 1.5, speed: 0.07, fov: 38, lookShift: 2.4 }
         : mode === 'drive'
           ? null
           : director.shot;

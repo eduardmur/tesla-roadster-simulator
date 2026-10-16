@@ -77,6 +77,15 @@ export function CameraRig({ carRef }: { carRef: React.RefObject<THREE.Group | nu
           carPos.z + Math.sin(a) * shot.radius,
         );
         v.look.copy(carPos).add(v.tmp.set(0, 0.35, 0));
+        if (shot.lookShift) {
+          // Camera-right in world space; look a little left of the car so it sits right of centre.
+          v.tmp.copy(v.look).sub(v.pos).cross(WORLD_UP).normalize();
+          const aspect = state.size.width / Math.max(state.size.height, 1);
+          v.look.addScaledVector(
+            v.tmp,
+            -shot.lookShift * Math.min(1, Math.max(0, (aspect - 1) / 0.8)),
+          );
+        }
         fov = shot.fov ?? 42;
         stiffness = 3;
         break;

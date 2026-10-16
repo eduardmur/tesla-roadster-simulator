@@ -3,7 +3,15 @@ import type { V3 } from '../../physics/math';
 
 export type CameraShot =
   | { kind: 'chase' }
-  | { kind: 'orbit'; radius: number; height: number; speed: number; fov?: number }
+  | {
+      kind: 'orbit';
+      radius: number;
+      height: number;
+      speed: number;
+      fov?: number;
+      /** Shift the car right on screen by this many metres (hero framing). */
+      lookShift?: number;
+    }
   /** Offset and look target in the car's frame (x left, y up, z forward), world-up camera. */
   | { kind: 'carFrame'; offset: V3; look: V3; fov?: number }
   | { kind: 'world'; position: V3; lookAt: V3 | 'car'; fov?: number };

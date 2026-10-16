@@ -110,7 +110,7 @@ export interface TubeSpec {
 }
 
 /** Wall-and-ceiling test tube: a horizontal cylinder whose floor is flush with the ground. */
-export const TUBE: TubeSpec = { x: 100, z: -10, radius: 7, length: 70 };
+export const TUBE: TubeSpec = { x: 100, z: -10, radius: 9, length: 70 };
 
 export function tubeSurface(t: TubeSpec, around = 72, along = 14): SurfaceMesh {
   const pos: number[] = [];

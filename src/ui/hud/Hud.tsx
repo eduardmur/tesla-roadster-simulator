@@ -208,6 +208,38 @@ function ThrustCard({ t, trim }: { t: Telemetry; trim: string }) {
   );
 }
 
+/** One-line telemetry for small screens (phones), shown instead of the cards. */
+export function HudMini() {
+  const t = useTelemetry(8);
+  if (!t) return null;
+  return (
+    <div className="panel hud-mini" aria-label="Telemetry (compact)">
+      <span>
+        <strong>{fmtInt(t.speed * KMH_PER_MS)}</strong> km/h
+      </span>
+      <span style={{ color: 'var(--suction)' }}>
+        <strong>{fmt(t.downforce / 1000, 0)}</strong> kN suction
+      </span>
+      {t.hasTank && (
+        <>
+          <span style={{ color: 'var(--thrust)' }}>
+            <strong>{fmt((t.rearThrust + t.liftThrust + t.yawThrust) / 1000, 0)}</strong> kN thrust
+          </span>
+          <span>
+            <strong>{fmt(t.tankMass, 0)}</strong> kg air
+          </span>
+        </>
+      )}
+      {t.airborne && (
+        <span>
+          <strong>{fmt(t.altitude, 1)}</strong> m up
+        </span>
+      )}
+      <SimTag />
+    </div>
+  );
+}
+
 export function Hud() {
   const t = useTelemetry(12);
   const trim = useApp((s) => s.trim);

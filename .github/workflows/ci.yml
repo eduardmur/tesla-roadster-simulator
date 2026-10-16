@@ -35,9 +35,13 @@ jobs:
           path: dist
 
   e2e:
-    name: Playwright smoke test
+    name: Playwright smoke test (${{ matrix.browser }})
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -45,13 +49,13 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
       - run: npm run build
-      - run: npm run e2e
+      - run: npx playwright test --project=${{ matrix.browser }}
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: e2e-screenshots
+          name: e2e-screenshots-${{ matrix.browser }}
           path: artifacts/
           if-no-files-found: ignore
           retention-days: 14

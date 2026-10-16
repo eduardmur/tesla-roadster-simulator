@@ -74,3 +74,34 @@ approved the following changes:
   are exact definitions and live in code, not in the specs.
 - **Game-feel tuning lives in code:** suspension stiffness, camera, steering ratio. These
   numbers are never shown on screen, so they are not specs.
+
+## 3D app and experience
+
+- **No downloaded assets at all.** The sky, ground, reflections (in-scene light panels), carbon
+  texture and sound are procedural, and the car is built from extrusions. That removes any
+  licensing questions and keeps the first load small.
+- **Rapier "compat" build.** It embeds its WASM, so the physics chunk is about 1.7 MB gzipped. It
+  is lazy-loaded after the first frame of the hero scene, so the landing page renders without it.
+  The non-compat build would be smaller but needs WASM bundler plugins in both Vite and Vitest.
+- **Practice curl radius 7 m** (estimate). A tighter curl bends away from the flat floor faster
+  than the 0.25 m skirt travel (estimate) can follow, so suction breaks.
+- **Slow climb on the reported curl.** Entering a 10.6 m radius loop at 80+ km/h is a ~5 g pull-up
+  that bottoms out any suspension. The autopilot climbs at ~35 km/h, letting suction hold the car
+  on. Peak landing load in the sim is ~3.6 g, close to the reported 3.3 g readout.
+- **Tube radius 9 m** for wall and ceiling driving. A 7 m tube was too tight to drive around the
+  circumference.
+- **Scrub-back** restores the car's rigid-body state, tank, suction and flight-computer state.
+  Rapier's internal contact caches can't be restored, so a resumed run differs from the original
+  by less than 0.2 % of the distance travelled (tested).
+- **Hover rings, lanes and props** are our own test-pad layout, not part of any spec.
+- **Every on-screen number** comes from `specs.ts` (with a status tag), from the live sim
+  (tagged `sim`), or from `src/data/derived.ts` (computed from specs, tagged `sim`). Tour captions
+  and the `/how-it-works` page use `{spec:…}` / `{calc:…}` placeholders instead of literal numbers.
+- **The `/how-it-works` page is generated at build time** by `scripts/howItWorks.ts`, using the
+  same physics module, so the text version cannot drift from the simulation.
+- **Phones** get a one-line telemetry bar instead of the HUD cards, a collapsed dock, a virtual
+  stick and big buttons, plus a dismissible "turn sideways" prompt in portrait.
+- **Cross-browser checks.** CI runs the Playwright smoke suite on Chromium and Firefox with
+  software WebGL. WebKit was checked locally (7/7 passing).
+- **Test hook.** `window.__ft` exposes the host, the app store and the camera director so the smoke
+  tests can drive the app. It sends nothing anywhere.

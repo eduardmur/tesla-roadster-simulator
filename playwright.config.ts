@@ -29,5 +29,10 @@ export default defineConfig({
     reuseExistingServer: true,
     timeout: 60_000,
   },
-  projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
+  projects: [
+    { name: 'chromium', use: { browserName: 'chromium' } },
+    // Local cross-browser checks (CI runs chromium only): `npx playwright test --project=firefox`.
+    { name: 'firefox', use: { browserName: 'firefox', launchOptions: {} } },
+    { name: 'webkit', use: { browserName: 'webkit', launchOptions: {} } },
+  ],
 });

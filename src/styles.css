@@ -91,6 +91,7 @@ select {
 
 /* ---------------------------------------------------------------- buttons */
 .btn {
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -267,6 +268,21 @@ select {
   padding: 0;
   cursor: pointer;
   text-align: left;
+}
+
+.hud-mini {
+  display: none;
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  gap: 12px;
+  align-items: center;
+  padding: 6px 12px;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  z-index: 16;
 }
 
 .brand__unofficial {
@@ -1304,5 +1320,53 @@ kbd {
   *::after {
     transition: none !important;
     animation: none !important;
+  }
+}
+
+/* ---------------------------------------------------------------- phones (last, so it wins) */
+@media (max-width: 700px), (max-height: 520px) {
+  .hud {
+    display: none;
+  }
+  .hud-mini {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    white-space: normal;
+    max-width: calc(100vw - 2 * var(--gutter));
+  }
+  .brand__unofficial {
+    white-space: normal;
+    max-width: 52vw;
+  }
+  .topbar {
+    padding-top: max(8px, env(safe-area-inset-top));
+    padding-bottom: 8px;
+  }
+  .topbar__nav .btn--small {
+    min-height: 34px;
+    padding: 4px 10px;
+  }
+  .dock {
+    top: 104px;
+    bottom: auto;
+    max-height: calc(100vh - 120px);
+  }
+  .challenge-hud {
+    top: 104px;
+  }
+  .lab {
+    height: 70vh;
+  }
+}
+
+@media (max-height: 520px) {
+  .topbar__nav .hide-sm,
+  .topbar__nav .hide-md {
+    display: none;
+  }
+  .touch__stick {
+    width: 120px;
+    height: 120px;
   }
 }
