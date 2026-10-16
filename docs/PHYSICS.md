@@ -97,7 +97,7 @@ Leakage grows very fast with the gap:
 ### Measuring the gap
 
 The 3D sim fires 8 rays from points around the skirt line along the car's local −Y axis. The
-skirts can extend up to 0.2 m (**estimate**) to follow the surface. Whatever distance is left
+skirts can extend up to 0.25 m (**estimate**) to follow the surface. Whatever distance is left
 over is open gap. A ray that hits nothing counts as fully open (0.5 m). Leakage is weighted by
 perimeter, so we average the gaps:
 

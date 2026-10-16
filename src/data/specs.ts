@@ -702,7 +702,7 @@ export const SPECS = {
   skirtReach: {
     id: 'skirtReach',
     label: 'Skirt travel',
-    value: 0.2,
+    value: 0.25,
     unit: 'm',
     group: 'model',
     note: 'How far the deployable skirts can extend to follow the surface (needed on the curved ramp).',
@@ -770,10 +770,10 @@ export const SPECS = {
   practiceRampRadius: {
     id: 'practiceRampRadius',
     label: 'Practice curl radius',
-    value: 5,
+    value: 7,
     unit: 'm',
     group: 'model',
-    note: 'Our smaller training ramp (same 170° curl, ~10 m high).',
+    note: 'Our smaller training ramp (same 170° curl, ~14 m high). Tighter curls bend away from the flat floor faster than the skirts can follow.',
     ...estimate,
   },
   rampWidth: {

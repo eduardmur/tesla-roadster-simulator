@@ -217,6 +217,17 @@ export class FlightComputer {
     return this.rollActive;
   }
 
+  /** Internal state, for the scrub-back recorder. */
+  snapshot(): { rollActive: boolean; rollDir: 1 | -1; rollDone: number } {
+    return { rollActive: this.rollActive, rollDir: this.rollDir, rollDone: this.rollDone };
+  }
+
+  restore(s: { rollActive: boolean; rollDir: 1 | -1; rollDone: number }): void {
+    this.rollActive = s.rollActive;
+    this.rollDir = s.rollDir;
+    this.rollDone = s.rollDone;
+  }
+
   /** Start a 180° roll; direction follows the pilot's roll input if any. */
   requestRoll180(direction: 1 | -1 = 1): void {
     if (this.rollActive) return;
