@@ -139,7 +139,9 @@ More feedback from the project owner after v2.0:
   is now a 600 m-radius pad inside a concrete wall topped with red lamps, so the car stops there.
 - **The rear follows the reference photo:** the black light band sits flush along the top of the
   tail (no spoiler). Below it is a body-colour panel with a blank plate and narrow black corners.
-  The black lower section has a beam carrying the four thruster rings, fins and a diffuser lip.
+  The black lower section has a beam carrying the four thruster rings. (Fins, side cheeks and a
+  lip under the beam were tried and removed at the owner's request: from behind they read as a
+  frame with the road showing through.)
 
 ## 3D app
 

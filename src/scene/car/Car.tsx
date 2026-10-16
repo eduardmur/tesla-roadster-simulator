@@ -185,8 +185,7 @@ export function Car({ carRef }: { carRef: React.RefObject<THREE.Group | null> })
       <mesh position={[0, 0.13, TAIL_Z - 0.008]} material={m.plate}>
         <boxGeometry args={[0.47, 0.1, 0.006]} />
       </mesh>
-      {/* Black lower section: a beam carrying the four thruster rings, fins below, side cheeks
-          and a diffuser lip */}
+      {/* Black lower section: a beam carrying the four thruster rings */}
       <mesh position={[0, -0.03, TAIL_Z - 0.06]} material={m.gloss}>
         <boxGeometry args={[1.5, 0.12, 0.12]} />
       </mesh>
@@ -209,19 +208,6 @@ export function Car({ carRef }: { carRef: React.RefObject<THREE.Group | null> })
           <cylinderGeometry args={[0.02, 0.02, 0.01, 20]} />
         </mesh>
       ))}
-      {[-0.5, -0.25, 0, 0.25, 0.5].map((x) => (
-        <mesh key={`fin-${x}`} position={[x, -0.21, TAIL_Z - 0.08]} material={m.gloss}>
-          <boxGeometry args={[0.03, 0.24, 0.2]} />
-        </mesh>
-      ))}
-      {[-1, 1].map((sx) => (
-        <mesh key={`cheek-${sx}`} position={[sx * 0.75, -0.15, TAIL_Z - 0.08]} material={m.gloss}>
-          <boxGeometry args={[0.06, 0.36, 0.2]} />
-        </mesh>
-      ))}
-      <mesh position={[0, -0.33, TAIL_Z - 0.09]} rotation-x={0.12} material={m.gloss}>
-        <boxGeometry args={[1.56, 0.025, 0.22]} />
-      </mesh>
 
       {/* Small side cameras ahead of the windows, red side markers at the rear */}
       {[-1, 1].map((s) => (
