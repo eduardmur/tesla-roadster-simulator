@@ -52,6 +52,8 @@ export interface AppState {
   /** Short spoken/sound-cue captions (accessibility). */
   caption: string | null;
   webgl: boolean;
+  /** Hide all UI for clean screenshots (H). */
+  hideUi: boolean;
 
   set: (patch: Partial<AppState>) => void;
   setWhatIf: (patch: Partial<WhatIf>) => void;
@@ -65,7 +67,8 @@ export interface AppState {
       | 'muted'
       | 'labOpen'
       | 'specsOpen'
-      | 'settingsOpen',
+      | 'settingsOpen'
+      | 'hideUi',
   ) => void;
   setAssist: (key: keyof FlightAssists, on: boolean) => void;
   cycleCamera: () => void;
@@ -105,6 +108,7 @@ export const useApp = create<AppState>((set, get) => ({
   load: { stage: 'idle', progress: 0, label: '' },
   caption: null,
   webgl: true,
+  hideUi: false,
 
   set: (patch) => set(patch),
   setWhatIf: (patch) => set({ whatIf: { ...get().whatIf, ...patch } }),

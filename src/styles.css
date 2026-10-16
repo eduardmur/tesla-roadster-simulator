@@ -1048,9 +1048,8 @@ select {
 /* ---------------------------------------------------------------- tour */
 .tour-caption {
   position: fixed;
-  left: 50%;
+  left: var(--gutter);
   bottom: max(24px, env(safe-area-inset-bottom));
-  transform: translateX(-50%);
   width: min(720px, calc(100vw - 2 * var(--gutter)));
   padding: 16px 18px;
   z-index: 22;
@@ -1102,8 +1101,22 @@ select {
   top: 76px;
   right: var(--gutter);
   width: min(360px, calc(100vw - 2 * var(--gutter)));
+  max-height: calc(100vh - 96px);
+  overflow: auto;
   padding: 12px 14px;
   z-index: 21;
+}
+
+@media (max-width: 1150px) {
+  .tour-panel {
+    max-height: calc(100vh - 76px - 300px);
+  }
+}
+
+@media (min-width: 1151px) {
+  .tour-caption {
+    width: min(720px, calc(100vw - 360px - 3 * var(--gutter)));
+  }
 }
 
 /* ---------------------------------------------------------------- captions, toasts */

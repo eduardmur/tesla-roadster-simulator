@@ -151,7 +151,7 @@ export function PressureMap({ sim }: { sim: () => Sim | null }) {
             float v = uDp * (q / wsum);
             float bands = smoothstep(0.02, 0.0, abs(fract(v * 8.0) - 0.5) - 0.46);
             vec3 col = cividis(v) + bands * 0.15;
-            gl_FragColor = vec4(col, 0.85);
+            gl_FragColor = vec4(col, 0.6);
           }
         `,
         transparent: true,

@@ -274,6 +274,7 @@ export class Sim {
     this.holdBrake = false;
     this.input = { ...NO_INPUT };
     this.recorder.clear();
+    this.history.clear();
     this.prevPose = null;
     if (typeof spawn === 'string' && spawn === 'tilt') {
       this.tiltAngle = 0;

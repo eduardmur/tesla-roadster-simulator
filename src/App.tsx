@@ -99,6 +99,7 @@ export function App() {
   const specsOpen = useApp((s) => s.specsOpen);
   const settingsOpen = useApp((s) => s.settingsOpen);
   const set = useApp((s) => s.set);
+  const hideUi = useApp((s) => s.hideUi);
 
   useEffect(() => attachKeyboard(onAction), []);
 
@@ -145,9 +146,9 @@ export function App() {
       <Suspense fallback={null}>
         <Experience />
       </Suspense>
-      <TopBar />
+      {!hideUi && <TopBar />}
       {mode === 'landing' && <Landing />}
-      {mode === 'drive' && <DriveUI />}
+      {mode === 'drive' && !hideUi && <DriveUI />}
       {mode === 'tour' && (
         <Suspense fallback={null}>
           <Tour />

@@ -114,7 +114,7 @@ function PartsPanel() {
   );
 }
 
-function GripPanel() {
+export function GripPanel() {
   const t = useTelemetry(10);
   const sim = host.sim;
   if (!t || !sim) return null;
@@ -180,7 +180,7 @@ function GripPanel() {
   );
 }
 
-function TanksPanel() {
+export function TanksPanel() {
   const t = useTelemetry(6);
   const w = useApp((s) => s.whatIf);
   const setW = useApp((s) => s.setWhatIf);
@@ -270,7 +270,7 @@ function TanksPanel() {
   );
 }
 
-function NozzlePanel() {
+export function NozzlePanel() {
   const t = useTelemetry(6);
   const sim = host.sim;
   if (!t || !sim) return null;
@@ -377,7 +377,9 @@ function NozzlePanel() {
           {fmt(st.exitMach, 2)}, {fmt(st.exitPressure * BAR_PER_PA, 2)} bar
         </dd>
         <dt>exit temperature</dt>
-        <dd>{fmt(st.exitTemperature - 273.15, 0)} °C</dd>
+        <dd>
+          {fmt(st.exitTemperature - 273.15, 0)} °C{st.exitTemperature < 95 ? ' *' : ''}
+        </dd>
         <dt>mass flow / nozzle</dt>
         <dd>{fmt(st.massFlow, 1)} kg/s</dd>
         <dt>thrust / nozzle</dt>
@@ -388,6 +390,12 @@ function NozzlePanel() {
         <dd>{diamond > 0 ? `≈ ${fmt(diamond * 100, 1)} cm` : '—'}</dd>
       </dl>
       <p className="muted" style={{ fontSize: '0.875rem' }}>
+        {st.exitTemperature < 95 && (
+          <>
+            * Below the point where nitrogen condenses, so in reality part of the jet turns to mist;
+            that is the white plume. We ignore it (it barely changes thrust).{' '}
+          </>
+        )}
         F = ṁ·vₑ + (pₑ − pₐ)·Aₑ. Throat sized so 4 nozzles give <SpecValue id="rearThrustTotal" />{' '}
         at <SpecValue id="thrusterPressure" />. Area ratio <SpecValue id="nozzleAreaRatio" />. Try
         “Moon” in What if: with no air outside, thrust goes up. <SimTag />
@@ -396,7 +404,7 @@ function NozzlePanel() {
   );
 }
 
-function UnderbodyPanel() {
+export function UnderbodyPanel() {
   const t = useTelemetry(10);
   const sim = host.sim;
   if (!t || !sim) return null;

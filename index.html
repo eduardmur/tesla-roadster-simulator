@@ -3,15 +3,47 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Flying Tesla — how the 2026 Roadster's fans and thrusters work</title>
+    <title>
+      Flying Tesla: an interactive 3D explainer of the 2026 Roadster's fans and thrusters
+    </title>
     <meta
       name="description"
-      content="Unofficial interactive 3D explainer of the 2026 Tesla Roadster: suction fans, compressed-air thrusters and the upside-down ramp trick, with honest physics."
+      content="Unofficial interactive 3D explainer of the 2026 Tesla Roadster: drive it up a ramp until it's upside down, see the suction fans and cold-gas thrusters work, with honest, sourced physics."
     />
-    <meta name="theme-color" content="#0d1117" />
+    <link rel="canonical" href="{{site}}" />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:title"
+      content="Flying Tesla: how the 2026 Roadster flies, explained in 3D"
+    />
+    <meta
+      property="og:description"
+      content="Suction fans, compressed-air thrusters and the upside-down ramp trick. Drive it, look inside, and see every number's source."
+    />
+    <meta property="og:url" content="{{site}}" />
+    <meta property="og:image" content="{{site}}og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#0b0f17" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <p
+        style="
+          font-family: system-ui, sans-serif;
+          color: #e8edf5;
+          background: #0b0f17;
+          padding: 24px;
+        "
+      >
+        Flying Tesla needs JavaScript and WebGL for the 3D explainer.
+        <a href="how-it-works/" style="color: #9ad1ff">Read the full text version with diagrams</a>.
+        Unofficial educational simulation. Not affiliated with Tesla or SpaceX.
+      </p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

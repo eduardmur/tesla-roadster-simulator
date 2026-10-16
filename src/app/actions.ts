@@ -32,8 +32,13 @@ export function onAction(a: Action): void {
     case 'lab':
       app.toggle('labOpen');
       break;
+    case 'hideUi':
+      app.toggle('hideUi');
+      announce(useApp.getState().hideUi ? 'UI hidden. Press H to show it again.' : 'UI shown');
+      break;
     case 'escape':
-      if (app.hotspot) app.set({ hotspot: null });
+      if (app.hideUi) app.set({ hideUi: false });
+      else if (app.hotspot) app.set({ hotspot: null });
       else if (app.labOpen) app.set({ labOpen: false });
       else if (app.specsOpen || app.settingsOpen)
         app.set({ specsOpen: false, settingsOpen: false });

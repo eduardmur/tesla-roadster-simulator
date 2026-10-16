@@ -11,7 +11,6 @@ import {
   DRAG_STRIP,
   HOP_LANE,
   HOVER_PAD,
-  PARKED_CAR_HEIGHT,
   curlAngleAt,
   type SpawnId,
 } from './track';
@@ -394,7 +393,7 @@ export function createHop(): Challenge {
         title: c.title,
         status: cleared ? 'Cleared!' : overCars ? 'Over the cars…' : 'Run up, then Shift to hop',
         lines: [
-          `Max height: ${fmt(maxAlt, 1)} m (cars are ${PARKED_CAR_HEIGHT} m)`,
+          `Max height: ${fmt(maxAlt, 1)} m`,
           `Roll: ${fmt(deg(rollAccum), 0)}°`,
           `Air: ${fmt(sim.telemetry.tankMass, 0)} kg`,
         ],

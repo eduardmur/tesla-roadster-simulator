@@ -29,6 +29,7 @@ import {
   rimGeometry,
   sphereTankGeometry,
   tireGeometry,
+  trimGeometry,
   tubGeometry,
 } from './geometry';
 import { carMaterials } from './materials';
@@ -95,6 +96,7 @@ export function CarModel({ trim, xray, exploded, telemetry, reducedMotion }: Car
   const geo = useMemo(
     () => ({
       tub: tubGeometry(),
+      trim: trimGeometry(),
       podL: podGeometry(1),
       podR: podGeometry(-1),
       canopy: canopyGeometry(),
@@ -240,6 +242,7 @@ export function CarModel({ trim, xray, exploded, telemetry, reducedMotion }: Car
           renderOrder={xray ? 10 : 0}
         />
       </group>
+      <mesh geometry={geo.trim} material={trimMat} castShadow />
       <group ref={groups.canopy}>
         <mesh geometry={geo.canopy} material={glass} castShadow renderOrder={xray ? 11 : 1} />
       </group>
@@ -362,8 +365,8 @@ export function CarModel({ trim, xray, exploded, telemetry, reducedMotion }: Car
       {/* Nozzles */}
       <group ref={groups.rear}>
         {trim !== 'performance' && (
-          <mesh position={[0, -0.16, -2.04]} material={trimMat}>
-            <boxGeometry args={[1.7, 0.12, 0.2]} />
+          <mesh position={[0, -0.13, -2.15]} material={trimMat}>
+            <boxGeometry args={[1.62, 0.2, 0.04]} />
           </mesh>
         )}
       </group>
@@ -377,8 +380,11 @@ export function CarModel({ trim, xray, exploded, telemetry, reducedMotion }: Car
               material={thrustMat}
               castShadow
             />
-            <mesh position={[0, 0.07, 0]} material={trimMat}>
-              <cylinderGeometry args={[0.055, 0.06, 0.05, 20, 1, true]} />
+            <mesh position={[0, 0.06, 0]} material={trimMat}>
+              <cylinderGeometry args={[0.075, 0.08, 0.09, 24, 1, true]} />
+            </mesh>
+            <mesh position={[0, 0.005, 0]} rotation-x={Math.PI / 2} material={thrustMat}>
+              <torusGeometry args={[0.075, 0.008, 6, 24]} />
             </mesh>
           </group>
         );
@@ -417,6 +423,7 @@ export function GhostCarModel() {
   const geo = useMemo(
     () => ({
       tub: tubGeometry(),
+      trim: trimGeometry(),
       podL: podGeometry(1),
       podR: podGeometry(-1),
       canopy: canopyGeometry(),

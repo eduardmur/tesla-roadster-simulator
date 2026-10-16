@@ -6,6 +6,6 @@ export function nozzleVisualPosition(n: NozzleLayout): THREE.Vector3 {
   const p = new THREE.Vector3(...n.position);
   if (n.id.startsWith('Y-')) p.x = Math.sign(n.direction[0]) * -0.98;
   if (n.id.startsWith('D-')) p.y = -0.31;
-  if (n.id.startsWith('R')) p.z = -2.1;
+  if (n.id.startsWith('R')) p.z = -2.2;
   return p;
 }

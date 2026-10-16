@@ -66,6 +66,10 @@ export function ControlsHelp({ onClose }: { onClose: () => void }) {
             <kbd>T</kbd>
           </dt>
           <dd>Restart challenge</dd>
+          <dt>
+            <kbd>H</kbd>
+          </dt>
+          <dd>Hide the interface (screenshots)</dd>
         </dl>
         <p className="muted">
           Gamepad: triggers drive, A thrust, RB lift, Y roll, X X-ray. Touch: left stick, right

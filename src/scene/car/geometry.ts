@@ -9,22 +9,36 @@ import { BODY, WHEEL_RADIUS } from '../../physics/layout';
 
 type P = [number, number];
 
+/** A profile segment: straight lines through points, or a smooth spline through them. */
+type Seg = { line: P[] } | { spline: P[] };
+
+function buildShape(start: P, segs: Seg[]): THREE.Shape {
+  const shape = new THREE.Shape();
+  shape.moveTo(start[0], start[1]);
+  for (const seg of segs) {
+    if ('line' in seg) for (const [u, v] of seg.line) shape.lineTo(u, v);
+    else shape.splineThru(seg.spline.map(([u, v]) => new THREE.Vector2(u, v)));
+  }
+  shape.closePath();
+  return shape;
+}
+
 /** Extrude a side profile (u = z, v = y) across the car between x0 and x1. */
-function extrudeProfile(
-  points: P[],
+function extrudeShape(
+  shape: THREE.Shape,
   x0: number,
   x1: number,
   bevel = 0.04,
-  curveSegments = 12,
+  curveSegments = 24,
+  bevelSegments = 4,
 ): THREE.BufferGeometry {
-  const shape = new THREE.Shape(points.map(([u, v]) => new THREE.Vector2(u, v)));
   const depth = Math.max(Math.abs(x1 - x0) - 2 * bevel, 0.01);
   const geo = new THREE.ExtrudeGeometry(shape, {
     depth,
     bevelEnabled: bevel > 0,
     bevelThickness: bevel,
     bevelSize: bevel,
-    bevelSegments: 3,
+    bevelSegments,
     curveSegments,
   });
   // Shape lies in XY with extrusion along +Z (bevel adds ±bevel). rotateY(−90°) maps
@@ -35,84 +49,120 @@ function extrudeProfile(
   return geo;
 }
 
-function arch(cz: number, cy: number, r: number, bottom: number, from = true): P[] {
+function arch(cz: number, cy: number, r: number, bottom: number): P[] {
   const s = Math.asin((bottom - cy) / r); // negative
   const a0 = Math.PI - s; // e.g. 210°
   const a1 = s; // e.g. −30°
   const pts: P[] = [];
-  const n = 14;
+  const n = 18;
   for (let i = 0; i <= n; i++) {
     const a = a0 + ((a1 - a0) * i) / n;
     pts.push([cz + r * Math.cos(a), cy + r * Math.sin(a)]);
   }
-  return from ? pts : pts.reverse();
+  return pts;
 }
 
 export const WHEEL_VISUAL_Y = -0.09;
 const ARCH_R = 0.42;
-const FRONT_Z = 1.36;
-const REAR_Z = -1.4;
+export const FRONT_Z = 1.36;
+export const REAR_Z = -1.4;
 
 /** Centre tub between the fenders: nose, hood, rear deck, diffuser. */
 export function tubGeometry(): THREE.BufferGeometry {
-  const pts: P[] = [
+  const shape = buildShape(
     [2.1, -0.3],
-    [2.17, -0.17],
-    [2.1, -0.05],
-    [1.45, 0.09],
-    [0.85, 0.15],
-    [-0.95, 0.23],
-    [-1.85, 0.22],
-    [-2.12, 0.15],
-    [-2.16, -0.02],
-    [-2.04, -0.14],
-    [-1.75, -0.32],
-    [1.85, -0.32],
-  ];
-  return extrudeProfile(pts, -0.7, 0.7, 0.05);
+    [
+      { line: [[2.18, -0.17]] },
+      {
+        spline: [
+          [2.15, -0.07],
+          [1.85, 0.03],
+          [1.4, 0.1],
+          [0.85, 0.15],
+        ],
+      },
+      { line: [[-0.95, 0.23]] },
+      {
+        spline: [
+          [-1.5, 0.235],
+          [-1.9, 0.21],
+          [-2.13, 0.14],
+        ],
+      },
+      {
+        line: [
+          [-2.16, -0.02],
+          [-2.04, -0.14],
+          [-1.75, -0.32],
+          [1.85, -0.32],
+        ],
+      },
+    ],
+  );
+  return extrudeShape(shape, -0.7, 0.7, 0.05);
 }
 
 /** One side pod (fender line with both wheel arches). `side` = +1 left, −1 right. */
 export function podGeometry(side: 1 | -1): THREE.BufferGeometry {
   const bottom = -0.3;
-  const pts: P[] = [
-    [2.12, -0.06],
-    [1.88, 0.15],
-    [1.55, 0.33],
-    [1.36, 0.37],
-    [1.05, 0.3],
-    [0.7, 0.2],
-    [0.2, 0.17],
-    [-0.5, 0.22],
-    [-1.0, 0.36],
-    [-1.4, 0.42],
-    [-1.8, 0.36],
-    [-2.05, 0.26],
-    [-2.15, 0.12],
-    [-2.16, -0.1],
-    [-2.0, bottom],
-    ...arch(REAR_Z, WHEEL_VISUAL_Y, ARCH_R, bottom),
-    ...arch(FRONT_Z, WHEEL_VISUAL_Y, ARCH_R, bottom),
-    [2.05, -0.28],
-  ];
+  const shape = buildShape(
+    [2.12, -0.07],
+    [
+      {
+        spline: [
+          [1.95, 0.12],
+          [1.62, 0.31],
+          [1.36, 0.37],
+          [1.08, 0.31],
+          [0.72, 0.21],
+          [0.2, 0.17],
+          [-0.45, 0.21],
+          [-0.98, 0.34],
+          [-1.4, 0.42],
+          [-1.84, 0.36],
+          [-2.08, 0.24],
+          [-2.16, 0.1],
+        ],
+      },
+      {
+        line: [
+          [-2.16, -0.1],
+          [-2.0, bottom],
+        ],
+      },
+      { line: arch(REAR_Z, WHEEL_VISUAL_Y, ARCH_R, bottom) },
+      { line: arch(FRONT_Z, WHEEL_VISUAL_Y, ARCH_R, bottom) },
+      { line: [[2.05, -0.28]] },
+    ],
+  );
   const x0 = side > 0 ? 0.64 : -1.0;
   const x1 = side > 0 ? 1.0 : -0.64;
-  return extrudeProfile(pts, x0, x1, 0.06, 16);
+  return extrudeShape(shape, x0, x1, 0.07, 32, 5);
 }
 
 /** Glass canopy, narrowing toward the roof. */
 export function canopyGeometry(): THREE.BufferGeometry {
-  const pts: P[] = [
+  const shape = buildShape(
     [0.98, 0.13],
-    [0.55, 0.36],
-    [0.0, 0.6],
-    [-0.5, 0.63],
-    [-1.0, 0.5],
-    [-1.5, 0.25],
-    [-1.3, 0.2],
-    [-0.9, 0.2],
-  ];
-  const geo = extrudeProfile(pts, -0.66, 0.66, 0.08, 16);
+    [
+      {
+        spline: [
+          [0.6, 0.33],
+          [0.1, 0.57],
+          [-0.45, 0.635],
+          [-1.0, 0.5],
+          [-1.5, 0.25],
+        ],
+      },
+      {
+        line: [
+          [-1.3, 0.2],
+          [-0.9, 0.2],
+        ],
+      },
+    ],
+  );
+  const geo = extrudeShape(shape, -0.66, 0.66, 0.08, 32, 5);
   const pos = geo.attributes.position as THREE.BufferAttribute;
   for (let i = 0; i < pos.count; i++) {
     const y = pos.getY(i);
@@ -121,6 +171,42 @@ export function canopyGeometry(): THREE.BufferGeometry {
   }
   geo.computeVertexNormals();
   return geo;
+}
+
+/** Dark lower parts: side sills, front splitter, diffuser fins and wheel-well liners. */
+export function trimGeometry(): THREE.BufferGeometry {
+  const parts: THREE.BufferGeometry[] = [];
+  for (const sx of [1, -1]) {
+    const sill = new THREE.BoxGeometry(0.34, 0.07, 1.86);
+    sill.translate(sx * 0.83, -0.29, (FRONT_Z + REAR_Z) / 2);
+    parts.push(sill);
+    for (const z of [FRONT_Z, REAR_Z]) {
+      const liner = new THREE.CylinderGeometry(
+        ARCH_R + 0.01,
+        ARCH_R + 0.01,
+        0.3,
+        28,
+        1,
+        true,
+        Math.PI * 0.05,
+        Math.PI * 0.9,
+      );
+      liner.rotateZ(Math.PI / 2);
+      liner.rotateX(Math.PI / 2);
+      liner.translate(sx * 0.83, WHEEL_VISUAL_Y, z);
+      parts.push(liner);
+    }
+  }
+  const splitter = new THREE.BoxGeometry(1.86, 0.025, 0.28);
+  splitter.translate(0, -0.315, 2.0);
+  parts.push(splitter);
+  for (let i = -2; i <= 2; i++) {
+    const fin = new THREE.BoxGeometry(0.02, 0.08, 0.4);
+    fin.rotateX(-0.25);
+    fin.translate(i * 0.36, -0.3, -1.9);
+    parts.push(fin);
+  }
+  return mergeGeometries(parts.map((g) => g.toNonIndexed()))!;
 }
 
 /** Thin emissive light bars front and rear. */
@@ -149,21 +235,24 @@ export function tireGeometry(): THREE.BufferGeometry {
 
 export function rimGeometry(): THREE.BufferGeometry {
   const parts: THREE.BufferGeometry[] = [];
-  const disc = new THREE.CylinderGeometry(WHEEL_RADIUS - 0.1, WHEEL_RADIUS - 0.1, 0.06, 32);
+  const disc = new THREE.CylinderGeometry(WHEEL_RADIUS - 0.1, WHEEL_RADIUS - 0.1, 0.05, 40);
   disc.rotateZ(Math.PI / 2);
-  disc.translate(0.07, 0, 0);
+  disc.translate(0.06, 0, 0);
   parts.push(disc);
-  for (let i = 0; i < 5; i++) {
-    const spoke = new THREE.BoxGeometry(0.04, 0.05, WHEEL_RADIUS - 0.12);
-    spoke.translate(0.1, 0, (WHEEL_RADIUS - 0.12) / 2);
-    spoke.rotateX((i / 5) * Math.PI * 2);
-    parts.push(spoke);
+  const n = 12;
+  for (let i = 0; i < n; i++) {
+    const blade = new THREE.BoxGeometry(0.03, 0.035, WHEEL_RADIUS - 0.13);
+    blade.translate(0, 0, (WHEEL_RADIUS - 0.13) / 2 + 0.05);
+    blade.rotateY(0.25);
+    blade.translate(0.1, 0, 0);
+    blade.rotateX((i / n) * Math.PI * 2);
+    parts.push(blade);
   }
-  const hub = new THREE.CylinderGeometry(0.05, 0.05, 0.06, 16);
+  const hub = new THREE.CylinderGeometry(0.06, 0.06, 0.06, 20);
   hub.rotateZ(Math.PI / 2);
   hub.translate(0.11, 0, 0);
   parts.push(hub);
-  return mergeGeometries(parts)!;
+  return mergeGeometries(parts.map((g) => g.toNonIndexed()))!;
 }
 
 /** Converging–diverging nozzle bell. Axis along +Y (exit at y = 0, inlet above). */

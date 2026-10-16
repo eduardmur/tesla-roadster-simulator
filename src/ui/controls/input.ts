@@ -7,7 +7,7 @@
 import { NO_INPUT, type DriveInput } from '../../sim/types';
 
 export type Action =
-  'fans' | 'xray' | 'pause' | 'camera' | 'roll180' | 'restart' | 'escape' | 'lab';
+  'fans' | 'xray' | 'pause' | 'camera' | 'roll180' | 'restart' | 'escape' | 'lab' | 'hideUi';
 
 const DRIVE_CODES = new Set([
   'KeyW',
@@ -34,6 +34,7 @@ const ACTION_CODES: Record<string, Action> = {
   KeyT: 'restart',
   Escape: 'escape',
   KeyL: 'lab',
+  KeyH: 'hideUi',
 };
 
 export interface TouchState {
