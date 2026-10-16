@@ -54,6 +54,8 @@ export interface AppState {
   webgl: boolean;
   /** Hide all UI for clean screenshots (H). */
   hideUi: boolean;
+  /** Hold a safe speed on the curl run-in and climb (default on). */
+  rampAssist: boolean;
 
   set: (patch: Partial<AppState>) => void;
   setWhatIf: (patch: Partial<WhatIf>) => void;
@@ -68,7 +70,8 @@ export interface AppState {
       | 'labOpen'
       | 'specsOpen'
       | 'settingsOpen'
-      | 'hideUi',
+      | 'hideUi'
+      | 'rampAssist',
   ) => void;
   setAssist: (key: keyof FlightAssists, on: boolean) => void;
   cycleCamera: () => void;
@@ -109,6 +112,7 @@ export const useApp = create<AppState>((set, get) => ({
   caption: null,
   webgl: true,
   hideUi: false,
+  rampAssist: true,
 
   set: (patch) => set(patch),
   setWhatIf: (patch) => set({ whatIf: { ...get().whatIf, ...patch } }),

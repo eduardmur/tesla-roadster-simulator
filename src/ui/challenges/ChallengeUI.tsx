@@ -4,6 +4,9 @@ import { host } from '../../app/host';
 import { SPECS, type Spec } from '../../data/specs';
 import type { ChallengeHud, Medal } from '../../sim/challenges';
 import { useApp } from '../../state/store';
+import { curlSpeeds } from '../../sim/autopilot';
+import { CURLS } from '../../sim/track';
+import { fmt } from '../format';
 import { useHost } from '../hooks';
 import { StatusTag } from '../SpecValue';
 
@@ -24,6 +27,9 @@ export function ChallengeOverlay() {
   useHost();
   const hud = useChallengeHud();
   const autopilot = host.autopilotActive;
+  const rampAssist = useApp((s) => s.rampAssist);
+  const kind = host.challenge?.kind;
+  const isCurl = kind === 'curl' || kind === 'practice';
   return (
     <>
       {hud && (
@@ -35,6 +41,13 @@ export function ChallengeOverlay() {
               <li key={l.slice(0, 18)}>{l}</li>
             ))}
           </ul>
+          {isCurl && !autopilot && (
+            <p className="muted" style={{ fontSize: '0.8rem', margin: '4px 0 0' }}>
+              {rampAssist
+                ? `Ramp speed assist on: holding W gives a safe ${fmt(curlSpeeds(CURLS[kind as 'curl']).entry * 3.6, 0)} km/h. Just steer.`
+                : 'Ramp speed assist off: arrive too fast and v²/R bottoms out the suspension.'}
+            </p>
+          )}
           <div className="actions" style={{ justifyContent: 'center', marginTop: 8 }}>
             <button
               type="button"

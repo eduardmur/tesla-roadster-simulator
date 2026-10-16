@@ -176,6 +176,7 @@ function GoTo() {
 function Assists() {
   const assists = useApp((s) => s.assists);
   const fansOn = useApp((s) => s.fansOn);
+  const rampAssist = useApp((s) => s.rampAssist);
   const setAssist = useApp((s) => s.setAssist);
   const toggle = useApp((s) => s.toggle);
   const [launch, setLaunch] = useState(host.launchControl);
@@ -207,6 +208,10 @@ function Assists() {
         />
       </label>
       <label className="toggle">
+        <span>Ramp speed assist (The Curl)</span>
+        <input type="checkbox" checked={rampAssist} onChange={() => toggle('rampAssist')} />
+      </label>
+      <label className="toggle">
         <span>Drag strip launch control</span>
         <input
           type="checkbox"
@@ -218,7 +223,7 @@ function Assists() {
         />
       </label>
       <p className="muted" style={{ fontSize: '0.8rem', margin: 0 }}>
-        Turn both flight assists off for hard mode.
+        Turn the assists off for hard mode.
       </p>
     </section>
   );

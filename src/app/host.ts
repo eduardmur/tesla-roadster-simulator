@@ -3,7 +3,7 @@
  * the autopilot demo / ghost and the tour. The 3D scene calls `host.frame(dt)` once per frame.
  */
 import { CURLS, type SpawnId } from '../sim/track';
-import { createCurlAutopilot, type CurlAutopilot } from '../sim/autopilot';
+import { applyRampAssist, createCurlAutopilot, type CurlAutopilot } from '../sim/autopilot';
 import {
   createChallenge,
   type Challenge,
@@ -106,6 +106,17 @@ class Host {
       input = this.inputOverride(sim);
     } else {
       input = readDriveInput(sim.telemetry.airborne, onAction);
+    }
+    // Ramp speed assist: on the curl, W means "go at a safe speed".
+    const ch = this.challenge;
+    if (
+      !this.autopilot &&
+      app.rampAssist &&
+      ch &&
+      (ch.kind === 'curl' || ch.kind === 'practice') &&
+      ch.phase === 'running'
+    ) {
+      input = applyRampAssist(input, sim.telemetry, CURLS[ch.kind]);
     }
     if (this.challenge?.phase === 'done') input = { ...NO_INPUT, brake: 1 };
     sim.input = input;

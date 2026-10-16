@@ -105,3 +105,9 @@ approved the following changes:
   software WebGL. WebKit was checked locally (7/7 passing).
 - **Test hook.** `window.__ft` exposes the host, the app store and the camera director so the smoke
   tests can drive the app. It sends nothing anywhere.
+- **Ramp speed assist (default on).** A naive "hold W" run reaches the curl at ~200 km/h, where v²/R
+  is a few dozen g. The suspension bottoms out and the car bounces off, which is what physics
+  says. With the assist on, W means "go at a safe speed" on the run-in and climb, and the flight
+  assists handle the roll and landing, so a first-time visitor can finish the trick. Tests cover
+  both cases: the assisted naive run succeeds, and the unassisted one fails with a "Too fast"
+  explanation.

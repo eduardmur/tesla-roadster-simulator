@@ -31,6 +31,26 @@ export function speedControl(speed: number, target: number): { throttle: number;
   };
 }
 
+/** Safe run-in and climb speeds (m/s): slow enough that v²/R stays inside the suspension travel. */
+export function curlSpeeds(curl: CurlSpec): { entry: number; climb: number } {
+  return curl.radius > 8 ? { entry: 11, climb: 9 } : { entry: 9, climb: 7.5 };
+}
+
+/**
+ * Ramp speed assist: while the car is on the ground, the throttle is capped (and the brakes
+ * applied if needed) so it reaches the curl at a safe speed. Steering stays with the driver.
+ */
+export function applyRampAssist(input: DriveInput, t: Telemetry, curl: CurlSpec): DriveInput {
+  if (t.airborne || input.throttle <= 0) return input;
+  const s = curlSpeeds(curl);
+  const ctl = speedControl(t.forwardSpeed, t.surface === curl.id ? s.climb : s.entry);
+  return {
+    ...input,
+    throttle: Math.min(input.throttle, ctl.throttle),
+    brake: Math.max(input.brake, ctl.brake),
+  };
+}
+
 export type CurlPhase = 'approach' | 'climb' | 'flight' | 'landed';
 
 export interface CurlAutopilot {
@@ -45,8 +65,7 @@ export interface CurlAutopilot {
 export function createCurlAutopilot(curl: CurlSpec): CurlAutopilot {
   // Slow and steady: suction holds the car on, and a slow entry keeps the
   // centripetal load (v²/R) inside the suspension travel.
-  const entrySpeed = curl.radius > 8 ? 11 : 9;
-  const climbSpeed = curl.radius > 8 ? 9 : 7.5;
+  const { entry: entrySpeed, climb: climbSpeed } = curlSpeeds(curl);
   let rolled = false;
   let landedFor = 0;
   const ap: CurlAutopilot = {

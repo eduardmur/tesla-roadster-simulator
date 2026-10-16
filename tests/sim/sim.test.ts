@@ -6,7 +6,9 @@ import {
   simulateLaunch,
   type TrimId,
 } from '../../src/physics';
-import { createCurlAutopilot } from '../../src/sim/autopilot';
+import { applyRampAssist, createCurlAutopilot, laneSteer } from '../../src/sim/autopilot';
+import { createCurl } from '../../src/sim/challenges';
+import { NO_INPUT } from '../../src/sim/types';
 import { CURLS, curlAngleAt, type CurlSpec } from '../../src/sim/track';
 import { Sim, loadRapier } from '../../src/sim/world';
 
@@ -82,6 +84,34 @@ describe('3D sim', () => {
     expect(t.upright).toBeGreaterThan(0.95);
     expect(peakLandingG).toBeLessThan(6);
     expect(t.tankMass).toBeGreaterThan(50);
+    sim.dispose();
+  });
+
+  it.each([
+    [true, true],
+    [false, false],
+  ])('a player who just holds W: ramp assist %s → completes %s', (assist, completes) => {
+    const curl = CURLS.curl;
+    const sim = new Sim('rocket');
+    const ch = createCurl('curl');
+    ch.start(sim);
+    sim.listeners.add((s, info) => ch.onStep(s, info));
+    for (let i = 0; i < 120 * 70 && ch.phase !== 'done'; i++) {
+      sim.updateTelemetry();
+      const t = sim.telemetry;
+      // Naive player: full throttle, keeps it straight, no flying input (assists do the rest).
+      let input = {
+        ...NO_INPUT,
+        throttle: t.airborne ? 0 : 1,
+        steer: t.airborne ? 0 : laneSteer(t, curl.x),
+      };
+      if (assist) input = applyRampAssist(input, t, curl);
+      sim.input = input;
+      sim.step();
+    }
+    expect(ch.phase).toBe('done');
+    expect(ch.result!.success).toBe(completes);
+    if (!completes) expect(ch.result!.headline).toMatch(/Too fast/);
     sim.dispose();
   });
 

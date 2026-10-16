@@ -25,7 +25,8 @@ compressed-air thrusters push it. Every number on screen says whether it was **r
   The challenges have medals and personal bests:
   - Drag strip: 0–60 against the claimed times.
   - **The Curl**: the reveal trick on the reported 170°, ~21 m ramp. Watch the autopilot first, then
-    try it yourself against its ghost.
+    try it yourself against its ghost. With the default assists you only hold W and steer; turn them
+    off for hard mode.
   - Car hop over parked cars, with a bonus for a kick flip.
   - Hover hold: stay 2 m up for as long as the air lasts.
   - Free roam, including a tube to drive on walls and the ceiling.

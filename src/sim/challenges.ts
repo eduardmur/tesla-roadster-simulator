@@ -15,6 +15,9 @@ import {
   type SpawnId,
 } from './track';
 import type { Sim, StepInfo } from './world';
+import { curlSpeeds } from './autopilot';
+
+const curlSafeSpeed = (c: (typeof CURLS)['curl']) => curlSpeeds(c).entry;
 
 export type Medal = 'gold' | 'silver' | 'bronze' | null;
 export type ChallengeKind = 'drag' | 'curl' | 'practice' | 'hop' | 'hover' | 'free';
@@ -217,6 +220,8 @@ export function createCurl(which: 'curl' | 'practice'): Challenge {
   let airAtLanding = 0;
   let roofHit = false;
   let fellAt: number | null = null;
+  let entrySpeed: number | null = null;
+  let startTime = 0;
   const c: Challenge = {
     kind: which,
     title: CHALLENGE_INFO[which].title,
@@ -227,11 +232,26 @@ export function createCurl(which: 'curl' | 'practice'): Challenge {
     start(sim) {
       sim.reset(which);
       airStart = sim.tank?.mass ?? 0;
+      startTime = sim.time;
     },
     onStep(sim, info) {
       if (c.phase !== 'running') return;
       const g = sim.params.env.gravity;
-      if (info.surface === curl.id) maxAngle = Math.max(maxAngle, curlAngleAt(curl, info.pose.pos));
+      if (info.surface === curl.id) {
+        entrySpeed ??= Math.abs(dot(info.pose.linvel, info.pose.forward));
+        maxAngle = Math.max(maxAngle, curlAngleAt(curl, info.pose.pos));
+      }
+      // Never leave an attempt hanging: drove past, wandered off, or simply took too long.
+      const p = info.pose.pos;
+      if (
+        !leftLip &&
+        (sim.time - startTime > 60 ||
+          Math.abs(p[0] - curl.x) > 25 ||
+          p[2] > curl.z0 + curl.radius + 25)
+      ) {
+        finish(sim);
+        return;
+      }
       if (!leftLip && info.airborne && info.pose.pos[1] > 2) {
         if (maxAngle > (150 * Math.PI) / 180) {
           leftLip = true;
@@ -279,6 +299,7 @@ export function createCurl(which: 'curl' | 'practice'): Challenge {
   };
   function finish(sim: Sim) {
     c.phase = 'done';
+    const g = sim.params.env.gravity;
     const landed =
       touchdown !== null && !roofHit && landingAngle < (45 * Math.PI) / 180 && fellAt === null;
     const a = deg(landingAngle);
@@ -295,13 +316,17 @@ export function createCurl(which: 'curl' | 'practice'): Challenge {
       success: landed,
       medal,
       headline:
-        fellAt !== null
-          ? `Fell off at ${fmt(deg(fellAt), 0)}° — more speed or fans on`
-          : landed
-            ? 'Stuck the landing!'
-            : roofHit
-              ? 'Landed on the roof'
-              : 'Crash landing',
+        entrySpeed !== null && entrySpeed > curlSafeSpeed(curl) * 1.8 && !landed
+          ? `Too fast: hit the curl at ${fmt(entrySpeed * 3.6, 0)} km/h. v²/R ≈ ${fmt((entrySpeed * entrySpeed) / curl.radius / g, 0)} g bottoms out the suspension`
+          : fellAt !== null
+            ? `Fell off at ${fmt(deg(fellAt), 0)}°: keep the fans on and a steady speed`
+            : touchdown === null && !leftLip
+              ? 'Didn’t make it up the curl'
+              : landed
+                ? 'Stuck the landing!'
+                : roofHit
+                  ? 'Landed on the roof'
+                  : 'Crash landing',
       lines: [
         { label: 'Landing angle', value: `${fmt(a, 0)}°` },
         { label: 'Peak g on landing', value: `${fmt(peakG, 1)} g` },
