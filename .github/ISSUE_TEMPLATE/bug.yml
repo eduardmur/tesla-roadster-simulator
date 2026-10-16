@@ -1,0 +1,30 @@
+name: Bug report
+description: Something is broken, ugly or confusing
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect, and what did you see instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Open the tour\n2. Chapter 2, tilt to 120°\n3. …"
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser, OS and device
+      placeholder: 'Safari 19, iOS 20, iPhone 16'
+    validations:
+      required: true
+  - type: textarea
+    id: console
+    attributes:
+      label: Console errors or screenshots
+      description: Press H to hide the UI for a clean screenshot.

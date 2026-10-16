@@ -63,7 +63,9 @@ export function SpecValue({
   return (
     <span className={`spec ${className ?? ''}`}>
       {label && <span className="spec__label">{spec.label}: </span>}
-      <span className="spec__value">{formatSpec(spec, digits)}</span>{' '}
+      <span className={typeof spec.value === 'string' ? 'spec__text' : 'spec__value'}>
+        {formatSpec(spec, digits)}
+      </span>{' '}
       <StatusTag status={spec.status} source={spec.source} />
     </span>
   );

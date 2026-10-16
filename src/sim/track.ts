@@ -187,7 +187,7 @@ export const PARKED_CAR_BOXES: { offset: V3; half: V3 }[] = [
 
 export const PARKED_CAR_HEIGHT = 1.5;
 
-export const HOVER_PAD = { x: -60, z: -70, radius: 9, targetHeight: 2, band: 0.5 };
+export const HOVER_PAD = { x: -100, z: -70, radius: 9, targetHeight: 2, band: 0.5 };
 
 export const DRAG_STRIP = { x: -30, start: -150, length: 402.336, width: 14 };
 /** 1/8 mile from the start line. */

@@ -85,7 +85,8 @@ function Captions() {
 
 function VisibleCaption() {
   const caption = useApp((s) => s.caption);
-  if (!caption) return null;
+  const hideUi = useApp((s) => s.hideUi);
+  if (!caption || hideUi) return null;
   return (
     <div className="panel caption" aria-hidden="true">
       {caption}

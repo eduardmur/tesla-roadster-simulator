@@ -60,6 +60,19 @@ export function Settings() {
         <p className="muted" style={{ fontSize: '0.875rem' }}>
           No analytics, no trackers. Best times are kept only in this browser.
         </p>
+        <p className="footer-note">
+          Unofficial educational project. Not affiliated with, endorsed by, or connected to Tesla,
+          Inc. or SpaceX. “Tesla” and “Roadster” are trademarks of Tesla, Inc., used here only to
+          identify the subject. Figures come from public reporting as of 16 Oct 2026; estimates are
+          marked. Code MIT, text CC BY 4.0 ·{' '}
+          <a
+            href="https://github.com/eduardmur/flying-tesla"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Source on GitHub
+          </a>
+        </p>
       </div>
     </div>
   );

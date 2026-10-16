@@ -34,6 +34,28 @@ jobs:
         with:
           path: dist
 
+  e2e:
+    name: Playwright smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npm run e2e
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: e2e-screenshots
+          path: artifacts/
+          if-no-files-found: ignore
+          retention-days: 14
+
   deploy:
     name: Deploy to GitHub Pages
     needs: check

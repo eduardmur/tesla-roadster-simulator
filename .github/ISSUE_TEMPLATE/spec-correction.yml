@@ -1,0 +1,41 @@
+name: Spec correction
+description: A number is wrong, outdated or mislabelled (source required)
+labels: [spec-correction]
+body:
+  - type: input
+    id: spec
+    attributes:
+      label: Which spec?
+      description: The spec id from src/data/specs.ts or the label shown in "What's confirmed vs estimated".
+      placeholder: 'rearThrustTotal'
+    validations:
+      required: true
+  - type: input
+    id: current
+    attributes:
+      label: Current value and status
+      placeholder: 'over 80 kN (reported)'
+    validations:
+      required: true
+  - type: input
+    id: proposed
+    attributes:
+      label: Proposed value and status
+      placeholder: 'over 90 kN (reported)'
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Source URL
+      description: Required. Link to the article, video timestamp or document.
+      placeholder: 'https://…'
+    validations:
+      required: true
+  - type: textarea
+    id: quote
+    attributes:
+      label: Quote from the source
+      description: Paste the exact sentence that supports the change.
+    validations:
+      required: true

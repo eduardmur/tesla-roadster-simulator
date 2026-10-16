@@ -439,6 +439,16 @@ select {
   min-width: 140px;
 }
 
+.hud--compact .kv,
+.hud--compact .gmeter,
+.hud--compact .bar {
+  display: none;
+}
+
+.hud--compact .big-number {
+  font-size: 1.5rem;
+}
+
 .hud-card .eyebrow {
   display: flex;
   align-items: center;
@@ -1122,7 +1132,7 @@ select {
 /* ---------------------------------------------------------------- captions, toasts */
 .caption {
   position: fixed;
-  top: 76px;
+  bottom: calc(var(--hud-h, 0px) + 24px);
   left: 50%;
   transform: translateX(-50%);
   text-align: center;

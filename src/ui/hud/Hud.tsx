@@ -212,6 +212,7 @@ export function Hud() {
   const t = useTelemetry(12);
   const trim = useApp((s) => s.trim);
   const ambient = useApp((s) => s.whatIf.ambientPressure);
+  const compact = useApp((s) => s.labOpen);
   const ref = useRef<HTMLDivElement>(null);
   const ready = t !== null;
   // Expose the HUD height so the dock never slides under it.
@@ -223,10 +224,10 @@ export function Hud() {
     );
     ro.observe(el);
     return () => ro.disconnect();
-  }, [ready]);
+  }, [ready, compact]);
   if (!t) return null;
   return (
-    <div className="hud" aria-label="Telemetry" ref={ref}>
+    <div className={`hud${compact ? ' hud--compact' : ''}`} aria-label="Telemetry" ref={ref}>
       <SpeedCard t={t} />
       <SuctionCard t={t} ambient={ambient} />
       <ThrustCard t={t} trim={trim} />

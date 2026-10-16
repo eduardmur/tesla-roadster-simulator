@@ -484,7 +484,7 @@ export function createHover(): Challenge {
               : 'Too high'
           : 'Hold Shift to lift off',
         lines: [
-          `Height: ${fmt(t.altitude, 2)} m (target ${lo}–${hi} m)`,
+          `Height: ${fmt(Math.max(0, t.altitude), 2)} m (target ${lo}–${hi} m)`,
           `Time in band: ${fmt(inBand, 1)} s`,
           `Air left: ${fmt(t.tankMass, 0)} kg · ${Number.isFinite(t.airLeftSeconds) ? fmt(t.airLeftSeconds, 1) + ' s' : '—'}`,
         ],

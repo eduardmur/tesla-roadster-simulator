@@ -279,21 +279,20 @@ function HoverPad() {
       {[HOVER_PAD.targetHeight - HOVER_PAD.band, HOVER_PAD.targetHeight + HOVER_PAD.band].map(
         (h) => (
           <mesh key={h} position={[0, h, 0]} rotation-x={Math.PI / 2}>
-            <torusGeometry args={[HOVER_PAD.radius * 0.55, 0.035, 8, 64]} />
-            <meshStandardMaterial
+            <torusGeometry args={[HOVER_PAD.radius * 0.95, 0.02, 6, 96]} />
+            <meshBasicMaterial
               color={COLORS.suction}
-              emissive={COLORS.suction}
-              emissiveIntensity={1.2}
-              toneMapped={false}
               transparent
-              opacity={0.8}
+              opacity={0.45}
+              depthWrite={false}
+              toneMapped={false}
             />
           </mesh>
         ),
       )}
       {[0, 1, 2, 3].map((i) => {
         const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
-        const r = HOVER_PAD.radius * 0.55;
+        const r = HOVER_PAD.radius * 0.95;
         return (
           <mesh key={i} position={[Math.cos(a) * r, 1.4, Math.sin(a) * r]} material={steel}>
             <cylinderGeometry args={[0.05, 0.05, 2.8, 8]} />
