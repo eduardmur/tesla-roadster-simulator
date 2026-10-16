@@ -1,7 +1,7 @@
 {
   "name": "flying-tesla",
   "private": true,
-  "version": "0.9.0",
+  "version": "1.0.0",
   "description": "Flying Tesla \u2014 an unofficial interactive 3D explainer of the 2026 Tesla Roadster's suction fans and cold-gas thrusters.",
   "license": "MIT",
   "type": "module",
