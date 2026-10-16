@@ -51,7 +51,8 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps ${{ matrix.browser }}
       - run: npm run build
-      - run: npx playwright test --project=${{ matrix.browser }}
+      # Headless Firefox on CI runners has no WebGL 2, so it checks the graceful fallback and the text page.
+      - run: npx playwright test --project=${{ matrix.browser }} ${{ matrix.browser == 'firefox' && '--grep "fallback|how-it-works"' || '' }}
       - uses: actions/upload-artifact@v7
         if: always()
         with:

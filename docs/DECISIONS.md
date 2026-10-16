@@ -101,8 +101,10 @@ approved the following changes:
   same physics module, so the text version cannot drift from the simulation.
 - **Phones** get a one-line telemetry bar instead of the HUD cards, a collapsed dock, a virtual
   stick and big buttons, plus a dismissible "turn sideways" prompt in portrait.
-- **Cross-browser checks.** CI runs the Playwright smoke suite on Chromium and Firefox with
-  software WebGL. WebKit was checked locally (7/7 passing).
+- **Cross-browser checks.** CI runs the full Playwright smoke suite on Chromium with software
+  WebGL. Headless Firefox on CI runners has no WebGL 2, so its CI job checks the graceful fallback
+  and the text page instead. That is itself a requirement, and a dedicated test forces it in
+  Chromium too. WebKit (Safari's engine) passed the full suite locally.
 - **Test hook.** `window.__ft` exposes the host, the app store and the camera director so the smoke
   tests can drive the app. It sends nothing anywhere.
 - **Ramp speed assist (default on).** A naive "hold W" run reaches the curl at ~200 km/h, where v²/R

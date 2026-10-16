@@ -187,3 +187,28 @@ test('how-it-works page works without canvas', async ({ page }) => {
   await shot(page, 'how-it-works');
   expect(errors).toEqual([]);
 });
+
+test('graceful fallback when WebGL 2 is unavailable', async ({ page }) => {
+  const errors = trackErrors(page);
+  // Pretend the browser has no WebGL 2.
+  await page.addInitScript(() => {
+    const original = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (
+      this: HTMLCanvasElement,
+      type: string,
+      ...rest: unknown[]
+    ) {
+      if (type === 'webgl2') return null;
+      return (original as (...a: unknown[]) => unknown).call(this, type, ...rest);
+    } as typeof HTMLCanvasElement.prototype.getContext;
+  });
+  await page.goto('./');
+  await expect(page.locator('.nowebgl')).toBeVisible();
+  await expect(
+    page.getByText('Unofficial educational simulation. Not affiliated with Tesla or SpaceX.'),
+  ).toBeVisible();
+  const link = page.getByRole('link', { name: 'Read how it works' });
+  await expect(link).toHaveAttribute('href', /how-it-works\/$/);
+  await shot(page, 'fallback');
+  expect(errors).toEqual([]);
+});
