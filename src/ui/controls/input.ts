@@ -98,13 +98,29 @@ export function attachKeyboard(onAction: (a: Action) => void): () => void {
     controls.keys.delete(e.code);
   };
   const blur = () => controls.keys.clear();
+  // After a mouse/touch click on a button, slider or checkbox, give the keyboard back to the game
+  // (otherwise Space would re-press the button and WASD would move the slider). Keyboard-driven
+  // activation keeps focus, so keyboard-only users are unaffected.
+  const release = (e: Event) => {
+    const t = e.target;
+    if (!(t instanceof HTMLElement)) return;
+    const pointer = e.type === 'pointerup' || (e as MouseEvent).detail > 0;
+    const el = t.closest('button, input[type="range"], input[type="checkbox"]');
+    if (pointer && el instanceof HTMLElement && !el.closest('[role="dialog"]')) {
+      setTimeout(() => el.blur(), 0);
+    }
+  };
   window.addEventListener('keydown', down);
   window.addEventListener('keyup', up);
   window.addEventListener('blur', blur);
+  window.addEventListener('click', release, true);
+  window.addEventListener('pointerup', release, true);
   return () => {
     window.removeEventListener('keydown', down);
     window.removeEventListener('keyup', up);
     window.removeEventListener('blur', blur);
+    window.removeEventListener('click', release, true);
+    window.removeEventListener('pointerup', release, true);
   };
 }
 

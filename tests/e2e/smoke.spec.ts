@@ -102,6 +102,13 @@ test('every challenge starts', async ({ page }) => {
     await page.waitForTimeout(1500);
     await shot(page, `challenge-${kind}`);
   }
+  // A mouse click on a challenge gives the keyboard back to the game (Space must thrust, not re-click).
+  await page
+    .getByRole('button', { name: /Drag strip/ })
+    .first()
+    .click();
+  await page.waitForTimeout(100);
+  expect(await page.evaluate(() => document.activeElement?.tagName)).not.toBe('BUTTON');
   expect(errors).toEqual([]);
 });
 
