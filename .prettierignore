@@ -1,0 +1,8 @@
+dist
+node_modules
+artifacts
+coverage
+package-lock.json
+public/og-image.png
+test-results
+playwright-report
