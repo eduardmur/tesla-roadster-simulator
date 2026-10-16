@@ -79,7 +79,6 @@ export function simulateLaunch(params: VehicleParams, opts: LaunchOptions): Laun
     if (step === 0) gripLimitedAtLaunch = limit < motor;
 
     let thrust = 0;
-    let massFlow = 0;
     if (rear && tank && params.tank) {
       const n = nozzlePerformance(
         rear.geometry,
@@ -90,7 +89,7 @@ export function simulateLaunch(params: VehicleParams, opts: LaunchOptions): Laun
       );
       const count = rear.nozzles.length;
       thrust = n.thrust * count * rear.maxDuty;
-      massFlow = n.massFlow * count * rear.maxDuty;
+      const massFlow = n.massFlow * count * rear.maxDuty;
       tank = stepTank(tank, params.tank, massFlow, dt);
     }
 
